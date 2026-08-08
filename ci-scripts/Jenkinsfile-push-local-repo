@@ -1,0 +1,116 @@
+#!/bin/groovy
+/*
+ * SPDX-License-Identifier: LicenseRef-CSSL-1.0
+ */
+
+// Location of the python executor node shall be in the same subnet as the others servers
+def nodeExecutor = params.nodeExecutor
+
+// SSH URL of the internal git repository
+def internalRepoURL = params.internalRepoURL
+
+// Name of the resource
+def lockResources = []
+if (params.LockResources != null && params.LockResources.trim().length() > 0)
+  params.LockResources.trim().split(",").each{lockResources += [resource: it.trim()]}
+
+pipeline {
+  agent {
+    label nodeExecutor
+  }
+  options {
+    ansiColor('xterm')
+    lock(extra: lockResources)
+  }
+  stages {
+    stage('Verify parameters') {
+      steps {
+        script {
+          def missingParams = []
+          if (!params.sourceRepo?.trim())   { missingParams << 'sourceRepo' }
+          if (!params.sourceBranch?.trim())   { missingParams << 'sourceBranch' }
+          if (!params.sourceCommit?.trim()) { missingParams << 'sourceCommit' }
+          if (params.mergeWithTarget) {
+            if (!params.targetRepo?.trim())   { missingParams << 'targetRepo' }
+            if (!params.targetBranch?.trim()) { missingParams << 'targetBranch' }
+          }
+
+          if (missingParams) {
+            error "Missing required parameters: ${missingParams.join(', ')}"
+          }
+
+          echo "Source Repo   : ${params.sourceRepo}"
+          echo "Source Branch : ${params.sourceBranch}"
+          echo "Source Commit : ${params.sourceCommit}"
+          echo "Merge         : ${params.mergeWithTarget}"
+          if (params.mergeWithTarget) {
+            echo "Target Branch : ${params.targetBranch}"
+            echo "Target Repo   : ${params.targetRepo}"
+          }
+        }
+      }
+    }
+    stage('Prepare workspace') {
+      steps {
+        sh """
+          git config user.email "jenkins@openairinterface.org"
+          git config user.name "OAI Jenkins"
+          git remote remove source || true
+          git remote remove target || true
+          git remote remove internal-repo || true
+        """
+      }
+    }
+    stage('Add source repo & fetch branches') {
+      steps {
+        sh """
+          git remote add source ${params.sourceRepo} || true
+          git fetch source ${params.sourceBranch}
+        """
+        script {
+          if (params.mergeWithTarget) {
+            sh """
+              git remote add target ${params.targetRepo} || true
+              git fetch target ${params.targetBranch}
+            """
+          }
+        }
+      }
+    }
+    stage('Create temporary branch for CI') {
+      steps {
+        script {
+          env.NEW_BRANCH = "${params.sourceBranch}-${params.sourceCommit}"
+          echo "New branch: ${env.NEW_BRANCH}"
+        }
+        sh """
+          # Checkout source commit
+          git checkout -B ${env.NEW_BRANCH} ${params.sourceCommit}
+        """
+      }
+    }
+    stage('Merge target into source') {
+      when { expression { return params.mergeWithTarget } }
+      steps {
+        sh """
+          echo "Merging target branch ${params.targetBranch} into source branch ${env.NEW_BRANCH}"
+          if ! git merge --ff target/${params.targetBranch} \
+            -m "Merge ${params.targetBranch} into ${params.sourceBranch} for CI"; then
+            echo "Merge conflicts detected. Aborting."
+            git merge --abort || true
+            exit 1
+          fi
+        """
+      }
+    }
+    stage('Push merged branch to internal repository') {
+      steps {
+        sh """
+          git remote add internal-repo ${internalRepoURL} || true
+          echo "Pushing ${env.NEW_BRANCH} to internal repo"
+          git push --force internal-repo ${env.NEW_BRANCH}
+        """
+      }
+    }
+  }
+}

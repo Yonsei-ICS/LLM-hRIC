@@ -1,0 +1,20 @@
+{
+  "name": "five-ue-llm-guidance-ablation-v3-2",
+  "protocol_version": 4,
+  "arms": ["static_equal", "llm_only", "ddpg_only", "llm_guided_ddpg"],
+  "seeds": [1, 2, 3, 4, 5],
+  "offered_load_mbps_per_ue": 50,
+  "cell_prbs": 106,
+  "operational_min_prb": 10,
+  "operational_max_prb": 90,
+  "min_apply_success_rate": 0.99,
+  "settle_s": 30,
+  "calibration_s": 60,
+  "training_s": 600,
+  "training_intent_switch_s": 60,
+  "evaluation_s": 180,
+  "intent_switch_wait_s": 10,
+  "reverse_evaluation_s": 120,
+  "intent_1": "Maximize total DL throughput, prioritize slice 1:ffffff, and keep aggregate DL throughput of slice 1:123456 at or above {floor_mbps} Mbps.",
+  "intent_2": "Maximize total DL throughput, prioritize slice 1:123456, and keep aggregate DL throughput of slice 1:ffffff at or above {floor_mbps} Mbps."
+}

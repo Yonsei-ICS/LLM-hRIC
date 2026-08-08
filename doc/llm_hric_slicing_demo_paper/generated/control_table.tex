@@ -1,0 +1,14 @@
+\begin{table*}[t]
+\centering
+\caption{Balanced seed-1 control-path and asynchronous learner reliability.}
+\label{tab:pilot-control}
+\begin{tabular}{lrrrrrr}
+\toprule
+Arm & Apply success (\%) & RC p99 (ms) & Tick p99 (ms) & Stale skip (\%) & Learner updates & Accepted Actors\\
+\midrule
+LLM-guided TD3 & 100.00 & 2.80 & 107.02 & 1.19 & 30207 & 62 \\
+LLM only & 100.00 & 3.10 & 66.87 & 0.39 & 0 & 0 \\
+TD3 only & 100.00 & 2.87 & 93.38 & 1.00 & 30266 & 257 \\
+\bottomrule
+\end{tabular}
+\end{table*}

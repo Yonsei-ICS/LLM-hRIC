@@ -1,0 +1,159 @@
+\section{Slicing Control Path in OAI and FlexRIC}
+\label{sec:oai}
+This section documents the source changes that make a stock OAI/FlexRIC installation slice-controllable, so that the deployment can be reproduced. Relative to the OAI base revision, the working tree contains nine modified source and configuration files plus the FlexRIC submodule pointer, and four added files; the nine modified files account for +329/$-$71 lines. The FlexRIC submodule, base revision \texttt{340c36bc}, contains eleven modified files (+476/$-$228 lines) plus two added directories, the C slice-control xApp and the \systemname{} Python package. No file in the FlexRIC RC service-model encoder was touched: the new control action rides on the unmodified RC service model, and only the gNB-side RAN function and the xApp that drives it are new; the action semantics under Style~2 / Action~6 are nevertheless locally defined (Section~\ref{sec:limitations}). Table~\ref{tab:oai-mods} enumerates the complete surface.
+
+\subsection{Modification surface}
+The changes fall into six groups. The gNB RAN function gains a second E2SM-RC CONTROL style and its decoder. The gNB MAC gains a slice-aware downlink resource-block allocator and the policy table it reads. The RFSimulator change is a build-portability fix only. The configuration files add the second S-NSSAI and the E2 agent block. On the RIC side, a new C xApp actuates PRB policies and the existing monitor xApps were extended; the FlexRIC library changes are reliability fixes described in Section~\ref{subsec:oai-reliability}.
+
+\begin{table*}[t]
+\centering
+\caption{Complete modification surface. OAI paths are relative to the repository root; FlexRIC paths are relative to \texttt{openair2/E2AP/flexric}. ``new'' marks files that do not exist upstream; otherwise inserted/deleted line counts are given.}
+\label{tab:oai-mods}
+\scriptsize
+\begin{tabular}{@{}llp{0.50\textwidth}@{}}
+\toprule
+File & Change & Role \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{gNB RAN function (RC service model)} --- \texttt{openair2/E2AP/RAN\_FUNCTION/}}\\
+\texttt{O-RAN/rc\_ctrl\_service\_style\_2.c} & new (216 lines) & Style~2 RAN-function definition and RRM Policy Ratio List decoder \\
+\texttt{O-RAN/rc\_ctrl\_service\_style\_2.h} & new (37 lines) & control-action and RAN-parameter identifier enumerations \\
+\texttt{O-RAN/ran\_func\_rc.c} & +22/$-$4 & advertises two CONTROL styles; dispatches Style~2 / Action~6; logs style and action \\
+\texttt{CMakeLists.txt} & +2 & adds the decoder to \texttt{e2\_ran\_func\_cuup} and \texttt{e2\_ran\_func\_du\_cucp\_cuup} \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{gNB MAC downlink scheduler} --- \texttt{openair2/LAYER2/NR\_MAC\_gNB/}}\\
+\texttt{gNB\_scheduler\_dlsch\_default\_policies.c} & +203/$-$47 & splits proportional fair into a retransmission/MAC-CE pass and new-data passes; adds the budgeted per-slice pass, the policy installer and PRB accounting \\
+\texttt{gNB\_scheduler\_dlsch\_default\_policies.h} & +2 & exports \texttt{nr\_dl\_slice\_prb\_policy()} and \texttt{nr\_mac\_set\_dl\_slice\_policies()} \\
+\texttt{nr\_mac\_gNB.h} & +15 & \texttt{nr\_dl\_slice\_policy\_t} and five per-MAC policy/accounting fields \\
+\texttt{main.c} & +2/$-$1 & default \texttt{dl\_rb\_alloc} hook becomes \texttt{nr\_dl\_slice\_prb\_policy} \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Radio simulator} --- \texttt{radio/rfsimulator/}}\\
+\texttt{simulator.cpp} & +74/$-$15 & option table rebuilt with helper functions for the C++ toolchain; no functional change \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Testbed configuration} --- \texttt{ci-scripts/conf\_files/}}\\
+\texttt{gnb.sa.band78.106prb.rfsim.conf} & +8/$-$3 & second S-NSSAI in \texttt{snssaiList}; \texttt{e2\_agent} block; local N2/N3 address \\
+\texttt{nrue.uicc.conf} & +1/$-$1 & explicit PDU-session id, DNN \texttt{oai} and SD \texttt{0xFFFFFF} \\
+\texttt{nrue.uicc.slice2.conf} & new & single UE on Slice~B (IMSI \texttt{208990100001101}, DNN \texttt{openairinterface}) \\
+\texttt{nrue.uicc.2slice.conf} & new & two UEs, one per slice, with an AWGN channel-model block \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{FlexRIC xApps} --- \texttt{examples/xApp/}}\\
+\texttt{c/rc\_slice\_ctrl/xapp\_rc\_slice\_ctrl.c} & new (573 lines) & JSON policy parser, E2SM-RC message encoder, Unix-socket actuator server \\
+\texttt{c/rc\_slice\_ctrl/CMakeLists.txt} & new & \texttt{xapp\_rc\_slice\_ctrl} target linked against \texttt{e42\_xapp} \\
+\texttt{c/CMakeLists.txt} & +1/$-$1 & registers the new sub-directory \\
+\texttt{c/monitor/xapp\_kpm\_moni.c} & +135/$-$15 & KPM record bounds checks, collection-timestamp normalization, SQLite sink \\
+\texttt{c/monitor/CMakeLists.txt} & +1 & links \texttt{-lsqlite3} \\
+\texttt{python3/xapp\_mac\_rlc\_pdcp\_gtp\_moni.py} & +234/$-$161 & four service-model subscriptions, RIC-side sampling throttle, per-callback exception isolation, database writer \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{FlexRIC library (reliability)} --- \texttt{src/}}\\
+\texttt{lib/msg\_hand/reg\_e2\_nodes.c} & +13/$-$3 & duplicate E2 SETUP replaces the stale registry entry instead of aborting \\
+\texttt{sm/pdcp\_sm/ie/pdcp\_data\_ie.c} & +8/$-$6 & removes the four counter-ordering assertions executed inside the gNB SM plugin \\
+\texttt{xApp/sync\_ui.c}, \texttt{xApp/sync\_ui.h} & +18/$-$11 & adds \texttt{prepare\_sync\_ui()}; the bounded wait returns a status instead of asserting \\
+\texttt{xApp/e42\_xapp.c} & +31/$-$4 & resets the synchronization flags before every send; handles timeout at three call sites \\
+\texttt{xApp/msg\_handler\_xapp.c} & +13/$-$21 & ignores late CONTROL ACK/FAILURE; removes the redundant CONTROL pending-event timer \\
+\texttt{xApp/db/sqlite3/sqlite3\_wrapper.c} & +22/$-$6 & 32-bit RLC byte constraint removed; bounded insert retry; busy timeout \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{E2SM-RC slice control action}
+The RAN function is the FlexRIC RC service model (\texttt{ORAN-E2SM-RC}, OID \texttt{1.3.6.1.4.1.53148.1.1.2.3}, service-model identifier~3, revision~1), encoded in ASN.1/PER. \texttt{fill\_rc\_control()} in \texttt{ran\_func\_rc.c} now declares two CONTROL styles instead of one. Style~1 (\emph{Radio Bearer Control}) is unchanged; \texttt{fill\_rc\_ctrl\_style\_2()} adds Style~2, \emph{Radio Resource Allocation Control}, with header format~1, message format~1, outcome format~1, no call-process identifier, no control outcome parameters, and a single control action: identifier~6, \emph{Slice-level PRB quota}, with one associated RAN parameter, \emph{RRM Policy Ratio List}. The style is advertised by the monolithic gNB and CU definitions; the DU-only and CU-UP-only definitions advertise no RC services and are unaffected.
+
+The control message reproduces the E2SM-RC RRM Policy Ratio List hierarchy using RAN Parameter IDs 1--12 (Table~\ref{tab:oai-ranparam}). Each list element is an RRM Policy Ratio Group of exactly four parameters: an RRM Policy structure (ID~3) containing an RRM Policy Member List (ID~4) whose member carries PLMN Identity (ID~6) and S-NSSAI (ID~7, carrying SST at ID~8 and an optional SD at ID~9), followed by Min (ID~10), Max (ID~11) and Dedicated (ID~12) PRB Policy Ratio integers. Two deviations must be stated. First, the PLMN Identity element is required to be present---the member structure must contain exactly two parameters---but the gNB never dereferences it and never checks its identifier, so PLMN is transported and ignored in this prototype. Second, SST and SD are transported as ASCII-text OCTET STRINGs (for example \texttt{"1"} and \texttt{"0xffffff"}, converted with \texttt{strtoul} base~0) or as plain INTEGERs, rather than the 3GPP binary octet encoding; an absent SD defaults to \texttt{0xffffff}.
+
+\begin{table}[t]
+\centering
+\caption{RAN parameters of the Slice-level PRB quota control message.}
+\label{tab:oai-ranparam}
+\scriptsize
+\begin{tabular}{@{}cll@{}}
+\toprule
+ID & RAN parameter & Decoder expectation \\
+\midrule
+1 & RRM Policy Ratio List & LIST, $\leq$ 1024 elements \\
+2 & RRM Policy Ratio Group & STRUCT of 4 (size only) \\
+3 & RRM Policy & STRUCT of 1 \\
+4 & RRM Policy Member List & LIST, element 0 used \\
+5 & RRM Policy Member & STRUCT of 2 (size only) \\
+6 & PLMN Identity & present but not read \\
+7 & S-NSSAI & STRUCT of 1 or 2 \\
+8 & SST & text/INTEGER, $\leq 255$ \\
+9 & SD & text/INTEGER, $\leq$ \texttt{0xffffff} \\
+10 & Min PRB Policy Ratio & INTEGER, 0--100 \\
+11 & Max PRB Policy Ratio & INTEGER, 0--100 \\
+12 & Dedicated PRB Policy Ratio & INTEGER, 0--100 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Dispatch happens in \texttt{write\_ctrl\_rc\_sm()}. Every CONTROL logs its style and action, and a message with style~2 and action~6 is handed to \texttt{apply\_rc\_ctrl\_style\_2\_slice\_level\_prb\_quota()}. The Control Header still carries a UE identifier, which the gNB ignores for this action because the policy is cell-wide. The decoder validates, in order: exactly one top-level RAN parameter, whose identifier is~1 and whose value is a non-null LIST of at most \texttt{MAX\_NUM\_SLICES}~=~1024 elements; per group, a structure of exactly four parameters, an RRM Policy structure with exactly one sub-parameter, a member list with at least one member, a member structure of exactly two parameters, an S-NSSAI structure of one or two parameters, $\mathrm{SST}\leq255$ and $\mathrm{SD}\leq\texttt{0xffffff}$, and the ratio chain $0\leq r_{\min}\leq r_{\mathrm{dedicated}}\leq r_{\max}\leq100$. Every check is an \texttt{AssertError}, which is not compiled out in release builds: it prints the failed condition with function, file and line to standard error and returns failure, so each rejection is observable.
+
+Atomicity is obtained by construction. The decoder parses the whole message into a local \texttt{nr\_dl\_slice\_policy\_t} array and calls \texttt{nr\_mac\_set\_dl\_slice\_policies()} only after every group has been accepted; a malformed message therefore never reaches MAC state. The installer re-checks the same ratio bounds and writes the policy table, its length and its enable flag while holding \texttt{gNB\_MAC\_INST::sched\_lock}---the same mutex that \texttt{gNB\_dlsch\_ulsch\_scheduler()} holds for the whole duration of a slot---so no scheduling opportunity ever observes a partially applied policy set. One honest caveat: the installer clears the table before its own re-validation loop and does not roll back on a mid-loop rejection; this path is unreachable in practice because the decoder applies identical bounds first. A further limitation is that the RIC Control Acknowledge is returned with a success outcome even when the application fails; rejection is visible only as an error line in the gNB log, not in the E2 outcome.
+
+\subsection{S-NSSAI-aware downlink scheduler}
+The scheduler hook is the existing \texttt{dl\_rb\_alloc} function pointer, invoked as step~6 of \texttt{nr\_dl\_schedule()} after candidate collection, rank/precoding selection, beam selection, time-domain allocation and MCS selection, and before transport-block-size computation and DCI/PUCCH allocation. \texttt{mac\_top\_init\_gNB()} now installs \texttt{nr\_dl\_slice\_prb\_policy} instead of \texttt{nr\_dl\_proportional\_fair} as the default allocator; the \texttt{phy\_test} branch is untouched. When no policy is installed, \texttt{nr\_dl\_slice\_prb\_policy()} delegates directly to \texttt{nr\_dl\_proportional\_fair()}, which was refactored but is behaviorally identical to upstream, so an unconfigured build matches stock OAI.
+
+With policies installed, allocation proceeds in four ordered passes over one proportional-fair ordering of the candidates: (1) HARQ retransmissions, each at its exact stored resource-block count; (2) UEs with no pending data that need five resource blocks for a timing-advance command or a beam-switch MAC control element; (3) for each configured policy in table order, new-data candidates of that S-NSSAI in proportional-fair order, capped at $\lfloor N_{\mathrm{RB}}\, r_{\mathrm{dedicated}}/100 \rfloor$ resource blocks in total; and (4) new-data candidates matching no policy, uncapped. Passes~1 and~2 are the stock proportional-fair phases with an added guard so that no candidate is allocated twice across the new multi-pass structure. Slice budgets can therefore never displace retransmissions or MAC control elements, and only new-data resource blocks are charged against a budget.
+
+A UE is matched by the S-NSSAI of its first data radio bearer. The MAC caches that S-NSSAI per logical channel in \texttt{nr\_lc\_config\_t::nssai}, written from the F1AP DRB-to-be-setup, which the RRC copies from the NGAP PDU Session Resource Setup S-NSSAI; \texttt{collect\_dl\_candidates()} scans the logical-channel configuration, takes the S-NSSAI of every channel with \texttt{lcid}~$\geq$~4, and copies it into the scheduling candidate. Lookup is exact equality on both SST and the 24-bit SD, with no wildcard or partial match. A UE with no DRB defaults to SST~0 / SD~\texttt{0xffffff} and therefore never matches a policy, falling through to pass~4. For a UE with several DRBs on different slices the scan retains the S-NSSAI of the first DRB reporting a non-zero 5QI, otherwise of the last DRB; this is unambiguous in the present testbed because every UE has exactly one PDU session and one DRB.
+
+The per-slot budget denominator is the full cell bandwidth, that is the number of schedulable resource blocks passed by the preprocessor (\texttt{carrierBandwidth}~=~106 here), not what remains after retransmissions. Retransmission resource blocks lie outside the budget but do reduce the free blocks the budgeted pass can find. With the 80/20 split of the sample policy the per-slot new-data caps are $\lfloor 106\cdot 80/100\rfloor=84$ and $\lfloor 106\cdot 20/100\rfloor=21$ resource blocks, one block being lost to integer truncation. Within a pass, each UE receives at most one contiguous block: the budget caps the largest free run found for that candidate's symbol bitmap, with a five-resource-block minimum, so fragmentation can leave part of a budget unusable. Three further mechanisms bound the outcome and should be stated: a policy with a zero dedicated ratio is skipped entirely and its UEs are excluded from pass~4 as well, receiving no new-data grants; the budget sums the available resource blocks over all beams while the allocator is invoked once per beam group, which is exact only for the single-beam configuration used here; and the downlink control-channel limit caps the testbed at four scheduled UEs per slot out of five, so a pass can terminate early and the loop simply proceeds to the next policy. The MAC also maintains a cumulative per-policy resource-block counter, reset on every policy installation, and emits one \texttt{slice\_prb} log line per active policy every 100 frames on slot~0; this is the gNB-side ground truth for realized PRB share.
+
+\begin{figure}[t]
+  \centering
+  \input{figures/oai_control_path}
+  \caption{Policy translation from external JSON to the OAI downlink scheduler.}
+  \label{fig:oai-path}
+\end{figure}
+
+\subsection{Persistent RC actuator}
+Fig.~\ref{fig:oai-path} traces one policy from the external JSON document written by the near-RT controller, through the persistent xApp and the E2SM-RC control message, to the per-slot budget applied by the gNB downlink scheduler. The C RC xApp no longer embeds the two S-NSSAIs. It reads an external JSON document (Table~\ref{tab:oai-json}) whose top-level \texttt{policies} array contains one object per slice with six mandatory keys: \texttt{plmn} (5--6 ASCII digits), \texttt{sst} and \texttt{sd} (string or integer, bounded by 255 and \texttt{0xffffff}), and \texttt{min\_prb}, \texttt{max\_prb}, \texttt{dedicated\_prb} (integers in $[0,100]$). It enforces $r_{\min}\leq r_{\mathrm{dedicated}}\leq r_{\max}$ per policy and a running sum of dedicated ratios of at most 100 across policies. The Python controller writes the same document atomically (temporary file, \texttt{fsync}, \texttt{rename}) and revalidates it against the identical rules before every action.
+
+\begin{table}[t]
+\caption{External PRB policy document consumed by the RC actuator.}
+\label{tab:oai-json}
+\scriptsize
+\begin{verbatim}
+{"policies": [
+ {"plmn": "20899", "sst": 1, "sd": "0xffffff",
+  "min_prb": 0, "max_prb": 100, "dedicated_prb": 80},
+ {"plmn": "20899", "sst": 1, "sd": "0x123456",
+  "min_prb": 0, "max_prb": 100, "dedicated_prb": 20}]}
+\end{verbatim}
+\end{table}
+
+The xApp runs either one-shot (\texttt{--policy-file}, \texttt{--once}) or as a persistent server (\texttt{--serve}) bound to an \texttt{AF\_UNIX} stream socket. A persistent association is required because a one-shot invocation must, per action, load every service-model plugin, create a fresh per-process SQLite database, open an SCTP association, complete the E42 SETUP exchange and observe a fixed one-second settling delay before it may send---well over one second, against a 100~ms control period, and leaking one database file per action. The persistent mode pays that cost once. The request is a single newline-terminated JSON line carrying only \texttt{request\_id} and \texttt{policy\_file}; the policy content is not sent over the socket, and the server re-reads the file from disk on every request. The response is one JSON line containing the echoed request identifier, a success flag, and two \texttt{CLOCK\_REALTIME} timestamps, \texttt{sent\_ts\_ms} taken before the file is loaded and \texttt{response\_ts\_ms} taken after the last CONTROL acknowledgement. The controller uses \texttt{response\_ts\_ms} to anchor the effect-observation window; the RC latency reported in this paper is the client-side socket round trip measured in the Python controller, not a value returned by the xApp.
+
+Three operational properties follow from the implementation and are stated for reproducibility. First, the actuator resolves the set of connected E2 nodes and each node's RC RAN-function identifier once at start-up and refuses to start if no node is attached; nodes that attach later are never controlled, so the gNB must be running before the actuator is launched. Second, RIC request identifiers are drawn from a monotonically increasing registry that never recycles keys and are asserted to fit in 16 bits, so one actuator process supports at most 65\,536 CONTROL procedures, about 109~minutes at the 100~ms period; the reported runs are approximately 87~minutes, and the experiment runner restarts the actuator per run. Third, the accept loop is sequential with no per-connection receive timeout, and the client socket timeout (5~s) is shorter than the effective E2 CONTROL deadline (approximately 6~s), so a CONTROL timeout would leave the server writing to a closed socket with no \texttt{SIGPIPE} handler installed. Neither condition occurred in the reported runs, in which every action was acknowledged.
+
+\subsection{Long-run reliability fixes}
+\label{subsec:oai-reliability}
+Four defects in stock FlexRIC aborted a process during multi-hour, high-rate operation. Each was fixed at its root cause rather than by retry logic in the experiment scripts.
+
+\begin{description}
+\item[Duplicate E2 node registration.] A second E2 SETUP carrying an already-registered global E2 node identifier---after a gNB restart, an SCTP reconnect, or a setup arriving before the stale entry was reaped---tripped an assertion in the node registry and aborted the near-RT RIC, taking every xApp association with it. The registry now extracts and frees the stale RAN-function/component-configuration entry, logs the replacement, and re-registers the node.
+\item[PDCP counter snapshot.] The PDCP service model treated the orderings $\mathrm{pkts}\leq\mathrm{bytes}$ on four transmit/receive counter pairs as fatal invariants. Packet and byte counters are updated independently by the PDCP data path, so a snapshot can carry the new packet count with the previous byte count, and the 32-bit byte counters wrap before their packet counterparts. Because this check executes inside the gNB's service-model agent plugin, sustained five-UE traffic aborted the RAN itself. The invariant was removed; consumers compute deltas and discard reset and wrap samples. The launcher enforces the fix at start-up: it scans the resolved \texttt{libpdcp\_sm.so} for the four assertion strings, refuses to start if any is present, and records the plugin's absolute path and SHA-256 digest.
+\item[E42 synchronization.] Three distinct defects were corrected. The synchronization flags were previously cleared inside the wait function, after the request had already been written to the socket, so an acknowledgement arriving in that window was discarded and the caller blocked until timeout; the reset was hoisted into a separate \texttt{prepare\_sync\_ui()} step executed before every subscription, subscription-delete and control send. A timeout was a fatal assertion; the wait now returns a status, and each of the three call sites logs, releases the active procedure and reports failure. An acknowledgement whose request identifier had already been released aborted the xApp; late CONTROL acknowledgements and failures are now ignored. In addition, the synchronous CONTROL path inserted a redundant ten-second timer into the pending-event map on every request, and removing an entry that had already been reaped corrupted that container after tens of thousands of control cycles; the bounded conditional wait is now the single CONTROL timeout, while the SETUP, subscription and subscription-delete pending events are unchanged.
+\item[xApp database.] The FlexRIC per-process xApp database aborted the monitor in two ways. Its RLC schema bounded the cumulative SDU byte counters to 32 bits, so every insert failed with a constraint error once a run exceeded 4~GiB per bearer direction; that bound was removed. Separately, any insert error, including transient busy or locked results from concurrent readers, was a fatal assertion; inserts now retry for up to 500~ms, the connection sets a five-second busy timeout and write-ahead logging, and a genuine error prints the SQLite message and the offending statement before failing.
+\end{description}
+
+The KPM collector also received a correctness fix: measurement records were indexed by label rather than by measurement, which read past the record list for measurements declaring multiple labels. Record-list length, unknown value types and unknown UE-identity types are now bounds-checked, and the reported indication latency normalizes the collection timestamp to epoch milliseconds.
+
+\subsection{Build configuration and reproduction}
+The E2 control path is gated at compile time. \texttt{E2\_AGENT} is a cache variable defaulting to \texttt{OFF}; \texttt{./build\_oai --build-e2} sets it, which adds the E2AP subtree, builds the RAN-function libraries with the new decoder, and links and defines \texttt{E2\_AGENT} for \texttt{nr-softmodem}. The body of the slice-quota handler is compiled only when \texttt{NGRAN\_GNB\_DU} is defined, which the DU/CU-CP/CU-UP library linked into \texttt{nr-softmodem} provides; in \texttt{nr-cuup} the handler is inert and returns success with a warning. The MAC-side changes are not behind any flag, but they fall back to stock proportional fair when no policy is installed, so a build without the E2 agent is behaviorally identical to upstream OAI.
+
+The reference host is Ubuntu 22.04 with GCC 10.5.0, CMake 3.22.1 and Ninja. The RAN is built with \texttt{./build\_oai -I --gNB --nrUE --build-e2 --ninja}; subsequent rebuilds additionally require \texttt{ninja -C cmake\_targets/ran\_build/build nr-softmodem nr-uesoftmodem params\_libconfig rfsimulator}, because the softmodems load the configuration and radio libraries at run time and would otherwise start and exit before reading their configuration. FlexRIC is configured with \texttt{cmake -S . -B build -DXAPP\_MULTILANGUAGE=ON} and built with targets \texttt{nearRT-RIC}, \texttt{xapp\_rc\_slice\_ctrl}, \texttt{xapp\_kpm\_moni}, \texttt{pdcp\_sm} and \texttt{xapp\_sdk}. The multilanguage option is off by default upstream but is mandatory here: without it the SWIG bindings are not generated and the Python monitor xApp, which the launcher hard-requires, cannot run. The pinned encoding configuration is E2AP~v2, KPM~v2.03, with the RC and KPM service models ASN.1-encoded and the MAC, RLC, PDCP and GTP service models using the plain FlexRIC encoding.
+
+One further change is required to build the reference testbed at all: \texttt{radio/rfsimulator/simulator.cpp} is compiled as C++, and the designated-initializer parameter macros used for the RFSimulator option table are not accepted by GCC~10. The option table was rewritten using seven small helper functions that construct each parameter descriptor by value. All fifteen parameter names, flags, target pointers and default values are unchanged, and the rewrite has no run-time effect; it is a build-portability fix, not a system feature.
+
+The gNB uses PLMN 208/99, band~78, 106 PRB at 30~kHz subcarrier spacing, and its only slicing-related change is the second entry in \texttt{snssaiList}. Two non-slicing changes matter to a reproducer: the appended \texttt{e2\_agent} block, which points the agent at a near-RT RIC on \texttt{127.0.0.1} and at a service-model directory that the launcher overrides at run time with \texttt{--e2\_agent.sm\_dir}, and the local N2/N3 address, set to \texttt{192.168.71.129} with the AMF at \texttt{192.168.71.132}. The five UE configurations of the reported runs are not the checked-in files: they are generated at launch by the experiment script into a per-run directory as \texttt{nrue.uicc.ue1.conf} through \texttt{nrue.uicc.ue5.conf}, with IMSIs \texttt{208990100001100}--\texttt{208990100001104}, DNN \texttt{oai} and SD \texttt{0xFFFFFF} for UE1--UE3 and DNN \texttt{openairinterface} and SD \texttt{0x123456} for UE4--UE5. Each UE runs in its own network namespace against its own RFSimulator server address. The checked-in \texttt{nrue.uicc.slice2.conf} and \texttt{nrue.uicc.2slice.conf} are single- and dual-UE convenience configurations and are not used by the five-UE campaign.
+
+\subsection{Site adaptation and distribution}
+The artifact is configured for the reference host and does not relocate itself. A reproducer must edit the following before a first run. In \texttt{config.yaml}: \texttt{control.rc\_xapp}, an absolute path into the FlexRIC build tree, and \texttt{rfsim\_channel.netns\_python}, an absolute interpreter path, both of which begin with the reference home directory; the working paths \texttt{db\_path}, \texttt{control.policy\_file}, \texttt{control.actuator\_socket}, \texttt{monitor.gnb\_log}, \texttt{monitor.nrue\_log\_dir}, the DDPG \texttt{checkpoint} and the actor \texttt{snapshot\_dir}, all of which are under \texttt{/tmp/llm\_hric}; and the traffic addresses \texttt{traffic.ext\_dn\_ip} (\texttt{192.168.72.135}) and \texttt{traffic.route\_gateway} (\texttt{192.168.72.134}), which must match the deployed core network. In the gNB configuration, the local N2/N3 address and the AMF address must match the core as well. One of these is not a portability detail but a correctness requirement: the campaign results directory must be given a persistent path. The pilot reported here wrote its results under \texttt{/tmp}, and the raw databases and trained checkpoints were destroyed when the host was rebooted to repair an unrelated GPU driver fault, because that directory does not survive a reboot.
+
+Distribution requires one clarification. The base revisions pinned above identify the upstream OAI and FlexRIC trees that were modified, but the two added directories---the C slice-control xApp and the \systemname{} Python package---are new source that is not obtainable from either pinned revision. The release therefore consists of the pinned base revisions, a patch series over them reproducing the modified files enumerated in Table~\ref{tab:oai-mods}, and the two added directories shipped in full.
+% TODO(authors): confirm the final distribution form (public fork versus patch
+% series plus source drop) and set \codeurl accordingly.
+
+\subsection{Semantics and conformance boundary}
+Three semantic restrictions of this implementation should be read together with the results. First, the scheduler enforces the dedicated ratio only: although minimum and maximum ratios are validated and stored at the E2 boundary, they are not independent scheduler mechanisms, and the near-RT controller performs bound projection before transmission. Second, unused budget of one controlled slice is not reclaimed by another controlled slice; unmatched UEs consume whatever remains in the final uncapped pass. Evaluating the commanded ratio therefore requires saturating traffic on both slices. Third, the per-slice budget is a per-slot new-data cap expressed against the full cell bandwidth, not a guaranteed share.
+
+S-NSSAI, DNN, registration and PDU-session procedures use the existing 3GPP mechanisms~\cite{3gpp23501}; no NAS, NGAP, RRC or PHY message is redefined, and the S-NSSAI the scheduler matches on is the one the core signaled for the UE's data radio bearer. The control encoding reuses the stock E2SM-RC ASN.1/PER encoder and reproduces the RRM Policy Ratio List parameter hierarchy under Control Style~2 / Action~6~\cite{oran_e2sm_rc}. The action semantics are nevertheless added locally to the OAI RC RAN function, the S-NSSAI fields deviate from the 3GPP binary encoding, the PLMN identity is not interpreted, control outcomes do not report application failures, and the system has not undergone O-RAN conformance certification. The per-slice PRB budget itself is an implementation-specific gNB scheduling policy. Section~\ref{sec:limitations} enumerates these deviations together with the measurement and evaluation limitations.

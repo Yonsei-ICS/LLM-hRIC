@@ -1,0 +1,81 @@
+{
+  "dirty_files": [
+    "M ci-scripts/conf_files/gnb.sa.band78.106prb.rfsim.conf",
+    " M ci-scripts/conf_files/nrue.uicc.conf",
+    " M openair2/E2AP/RAN_FUNCTION/CMakeLists.txt",
+    " M openair2/E2AP/RAN_FUNCTION/O-RAN/ran_func_rc.c",
+    " M openair2/E2AP/flexric",
+    " M openair2/LAYER2/NR_MAC_gNB/gNB_scheduler_dlsch_default_policies.c",
+    " M openair2/LAYER2/NR_MAC_gNB/gNB_scheduler_dlsch_default_policies.h",
+    " M openair2/LAYER2/NR_MAC_gNB/main.c",
+    " M openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h",
+    " M radio/rfsimulator/simulator.cpp",
+    "?? ci-scripts/conf_files/nrue.uicc.2slice.conf",
+    "?? ci-scripts/conf_files/nrue.uicc.slice2.conf",
+    "?? doc/llm_hric_slicing_demo_paper/",
+    "?? openair2/E2AP/RAN_FUNCTION/O-RAN/rc_ctrl_service_style_2.c",
+    "?? openair2/E2AP/RAN_FUNCTION/O-RAN/rc_ctrl_service_style_2.h",
+    "?? semantic_obj_dec_oai/",
+    "?? targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.52PRB.usrpb210.conf"
+  ],
+  "excluded": [
+    {
+      "arm": "ddpg_only",
+      "manifest": "/tmp/llm_hric/experiments/five-ue-traffic-v5/balanced/five-ue-traffic-v5-balanced-ddpg_only-seed1-1784794466243/manifest.json",
+      "reason": "status_not_complete",
+      "run_id": "five-ue-traffic-v5-balanced-ddpg_only-seed1-1784794466243",
+      "scenario": "balanced",
+      "seed": 1
+    }
+  ],
+  "expected_run_count": 45,
+  "flexric_revision": "340c36bc8385dc0b9f5d8b2d51d16ff288acee79",
+  "generated_at_utc": "2026-07-27T03:04:35.465132+00:00",
+  "generated_from": "/tmp/llm_hric/experiments/five-ue-traffic-v5",
+  "mode": "pilot",
+  "oai_revision": "cb0e501293a7a4664f09322136d7ff29a39343dc",
+  "selected": [
+    {
+      "arm": "llm_guided_ddpg",
+      "data_quality": "primary",
+      "database": "/tmp/llm_hric/experiments/five-ue-traffic-v5/balanced/five-ue-traffic-v5-balanced-llm_guided_ddpg-seed1-1784881197327/llm_hric.sqlite3",
+      "database_size_bytes": 1325461504,
+      "end_ts_ms": 1784886438130,
+      "manifest": "/tmp/llm_hric/experiments/five-ue-traffic-v5/balanced/five-ue-traffic-v5-balanced-llm_guided_ddpg-seed1-1784881197327/manifest.json",
+      "manifest_sha256": "b8ff2bd0715c1526f5f775ecf8e162a4e5c2601bd5e7dc29d4ff1e565520a2f1",
+      "run_id": "five-ue-traffic-v5-balanced-llm_guided_ddpg-seed1-1784881197327",
+      "scenario": "balanced",
+      "seed": 1,
+      "start_ts_ms": 1784881197330
+    },
+    {
+      "arm": "llm_only",
+      "data_quality": "primary",
+      "database": "/tmp/llm_hric/experiments/five-ue-traffic-v5/balanced/five-ue-traffic-v5-balanced-llm_only-seed1-1784875991935/llm_hric.sqlite3",
+      "database_size_bytes": 1029640192,
+      "end_ts_ms": 1784881104555,
+      "manifest": "/tmp/llm_hric/experiments/five-ue-traffic-v5/balanced/five-ue-traffic-v5-balanced-llm_only-seed1-1784875991935/manifest.json",
+      "manifest_sha256": "1ae05d37372ffeb1d3bc14ff3746b83a0852d30c43c6b52d9522dcec8237ac30",
+      "run_id": "five-ue-traffic-v5-balanced-llm_only-seed1-1784875991935",
+      "scenario": "balanced",
+      "seed": 1,
+      "start_ts_ms": 1784875991936
+    },
+    {
+      "arm": "ddpg_only",
+      "data_quality": "primary",
+      "database": "/tmp/llm_hric/experiments/five-ue-traffic-v5/balanced/five-ue-traffic-v5-balanced-ddpg_only-seed1-1784801425929/llm_hric.sqlite3",
+      "database_size_bytes": 1323462656,
+      "end_ts_ms": 1784806702039,
+      "manifest": "/tmp/llm_hric/experiments/five-ue-traffic-v5/balanced/five-ue-traffic-v5-balanced-ddpg_only-seed1-1784801425929/manifest.json",
+      "manifest_sha256": "6195c02b39fc4d1684e6c2b2b5636333343a15423f1855508d27259e3bf39f7b",
+      "run_id": "five-ue-traffic-v5-balanced-ddpg_only-seed1-1784801425929",
+      "scenario": "balanced",
+      "seed": 1,
+      "start_ts_ms": 1784801425930
+    }
+  ],
+  "selected_run_count": 3,
+  "spec": "/home/ics1/openairinterface5g/openair2/E2AP/flexric/examples/xApp/python3/llm_hric/experiments/five_ue_traffic_scenarios_v5.json",
+  "spec_sha256": "7f1d5c0353c4e2f9c37e9e530d0137ecfe275750042521a342eb76829fea025d"
+}

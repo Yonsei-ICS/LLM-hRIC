@@ -1,0 +1,15 @@
+\begin{table*}[t]
+\centering
+\caption{Same-seed paired bootstrap comparisons. Positive values favor guided control.}
+\label{tab:paired-results}
+\begin{tabular}{lllrrl}
+\toprule
+Scenario & Comparison & Metric & Pairs & Mean difference & 95\% CI\\
+\midrule
+balanced & Guided $-$ TD3 only & Intent satisfaction & 1 & 0.251 & [0.251, 0.251] \\
+balanced & Guided $-$ TD3 only & Total DL TH & 1 & 2.277 & [2.277, 2.277] \\
+balanced & Guided $-$ LLM only & Intent satisfaction & 1 & 0.003 & [0.003, 0.003] \\
+balanced & Guided $-$ LLM only & Total DL TH & 1 & 3.536 & [3.536, 3.536] \\
+\bottomrule
+\end{tabular}
+\end{table*}

@@ -1,0 +1,15 @@
+\begin{table*}[t]
+\centering
+\caption{Balanced seed-1 pilot. Satisfaction is the fraction of frozen evaluation windows meeting the active intent. Throughput values are RLC-derived Mbps.}
+\label{tab:pilot-performance}
+\begin{tabular}{lrrrrrr}
+\toprule
+& \multicolumn{2}{c}{Intent satisfaction (\%)} & \multicolumn{2}{c}{Total DL TH} & \multicolumn{2}{c}{Protected p5 DL TH}\\
+Arm & I1 & I2 & I1 & I2 & I1 & I2\\
+\midrule
+LLM-guided TD3 & 100.00 & 99.94 & 97.35 & 96.44 & 32.60 & 34.35 \\
+LLM only & 99.94 & 99.39 & 94.58 & 92.14 & 31.19 & 31.02 \\
+TD3 only & 79.94 & 69.78 & 95.49 & 93.73 & 25.69 & 33.50 \\
+\bottomrule
+\end{tabular}
+\end{table*}

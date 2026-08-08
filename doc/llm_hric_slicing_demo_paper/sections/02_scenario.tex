@@ -1,0 +1,69 @@
+\section{Network Scenario and Objective}
+\subsection{Five-UE sliced RAN}
+Fig.~\ref{fig:architecture} shows the deployed topology. The standalone OAI network~\cite{oai2026} uses PLMN 208/99, an OAI 5G core, one band-78 RFSimulator gNB with a 106-PRB downlink carrier at 30~kHz subcarrier spacing, and five local nrUE processes. The carrier serves two configured S-NSSAIs. Slice~A (\snssaiA) contains UE1--UE3 and uses DNN \texttt{oai}; Slice~B (\snssaiB) contains UE4--UE5 and uses DNN \texttt{openairinterface} (Table~\ref{tab:ue-map}). Each UE establishes exactly one PDU session with one data radio bearer, so its scheduling candidate carries an unambiguous S-NSSAI. Simultaneous UDP downlink flows from the external data network create PRB competition between the two slices.
+
+The five UE configurations are not checked-in files; they are generated at launch by the deployment script, and Section~\ref{sec:oai} gives the generated identities, slice assignments and network namespaces in the form a reproducer needs. The asymmetric three-versus-two split is deliberate: it makes equal per-UE demand produce unequal slice demand, so that a PRB split of exactly 50/50 is never simultaneously optimal for both slices.
+
+\begin{figure*}[t]
+  \centering
+  \input{figures/system_architecture}
+  \caption{Deployed LLM-hRIC network-slicing architecture. Solid blue arrows carry measurements and state, orange arrows carry guidance, and red arrows carry near-RT PRB controls. The RAN scheduler runs independently of all RIC clocks.}
+  \label{fig:architecture}
+\end{figure*}
+
+\begin{table}[t]
+\centering
+\caption{Five-UE slice configuration.}
+\label{tab:ue-map}
+\begin{tabular}{llll}
+\toprule
+Slice & S-NSSAI & UEs & DNN \\
+\midrule
+A & \snssaiA & UE1--UE3 & \texttt{oai} \\
+B & \snssaiB & UE4--UE5 & \texttt{openairinterface} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Intent and constrained objective}
+\label{subsec:objective}
+The campaign uses two natural-language intents that differ only by exchanging the two slices. Each contains a single templated field, the calibrated floor $F$:
+\begin{itemize}
+  \item \emph{Intent~1}: ``Maximize total DL throughput, prioritize slice \snssaiA, and keep aggregate DL throughput of slice \snssaiB{} at or above $F$ Mbps.''
+  \item \emph{Intent~2}: the same sentence with the two slices exchanged.
+\end{itemize}
+An intent therefore identifies a \emph{priority slice}, whose throughput should be increased, and a \emph{protected slice}, whose aggregate downlink throughput must remain above $F$. For slice throughputs $T_A$ and $T_B$, the controller first seeks $T_{\mathrm{protected}}\geq F$ and only then maximizes total and priority-slice throughput; the near-RT reward realizes that ordering as a two-branch function that withholds all throughput utility on a violated step, and is stated in full with its weights in the deployment section.
+
+Three details of the objective are prototype-specific and must not be read as generic O-RAN semantics. First, $F$ is not a contractual service-level agreement (SLA). It is derived per seed and per testbed during calibration as $F=0.90\,p_{10}$, where $p_{10}$ is the nearest-rank tenth percentile of the protected slice's measured downlink throughput at that intent's reference allocation (65\% Slice-A PRBs for Intent~1, 35\% for Intent~2); the resulting value is rendered into the intent sentence with two decimals. It is thus a testbed-feasible target with a 10\% margin below an already pessimistic observed level.
+
+Second, the priority requirement is quantitative but does \emph{not} appear in the sentence. A minimum commanded priority-slice PRB ratio of $\rho_{\min}=55\%$ is fixed by the campaign runner, embedded in each calibrated policy, and published as a machine-readable policy-constraint field alongside the intent text. The controller reads it from that field; the regular-expression fallback that would parse it out of the sentence finds nothing for these two intents and would yield zero. Consequently the paper distinguishes throughout between \emph{SLA satisfaction} ($T_{\mathrm{protected}}\geq F$) and \emph{intent satisfaction} (SLA satisfaction \emph{and} a commanded priority ratio of at least $\rho_{\min}$), and the two rates differ substantially in the results.
+
+Third, the identities of the priority and protected slices are resolved from the same machine-readable policy context, with regular-expression parsing of the intent sentence only as a fallback; if neither resolves, the protected slice silently defaults to the last slice in the catalogue. In the reported campaign both identities are always supplied explicitly by calibration, so the fallback path is never exercised.
+
+\subsection{Action space and feasible interval}
+The near-RT action is a single scalar in $[0,1]$, issued every 100~ms. It is interpolated over a feasible interval of admissible Slice-A budgets and rounded to an integer number of PRBs; the complementary budget of the other slice is the remainder of the 106-PRB cell, and the two budgets are emitted as complementary percentage ratios in the E2 control message. The feasible interval is recomputed for every action from the percentage bounds then active, with ceiling on minima, floor on maxima, and a complementarity constraint so that the same split is admissible for both slices; an empty interval is a hard error rather than a clipped action. Section~\ref{subsec:ctl-state} states the rounding rule, the interval construction and the resulting integer endpoints in full, and that derivation is not repeated here.
+
+Two bound sources are combined. Every arm is confined to a fixed \emph{operational envelope} of 10--90\% per slice, which is a campaign-specification constant applied before any run and not a calibration output; because the endpoints are taken inward to integer PRBs, the realized envelope is slightly narrower than 10--90\%. In addition, calibration derives per-intent \emph{policy-constraint bounds} from the fixed-ratio sweep and publishes them with the A1 policy. A swept allocation is counted as safe only if it satisfies \emph{both} conditions: the protected slice's tenth-percentile throughput at that allocation meets $F$, \emph{and} the allocation respects the intent direction, that is at least 55\% for Intent~1 and at most 45\% for Intent~2. Intent~1 then publishes Slice~A between 55\% and the largest safe allocation, and Intent~2 between the smallest safe allocation and 45\%. Only the arms that read guidance intersect these bounds with the operational envelope; the unguided arm sees the operational envelope alone.
+
+The division of labour between the language model and the guardrail is worth stating precisely, because it is easy to overstate the model's authority. The bounds carried by the A1 policy are \emph{not} the model's own. The rApp projects the model's proposed ratio into the calibrated policy-constraint bounds and then replaces the model's bound proposal with those calibrated bounds before publication. The guardrail is therefore calibration-derived and deterministic; the language model contributes the target \emph{inside} it, and the near-RT controller sees only the projected target and the calibrated interval.
+
+\subsection{Traffic scenarios}
+The campaign keeps the aggregate offered load at 150~Mbps in every phase of every scenario and changes only its distribution across UEs; the per-UE rates are listed in Table~\ref{tab:traffic}. Consequently \emph{balanced} means equal per-UE demand, not equal slice totals: its Slice-A/Slice-B offered loads are 90/60~Mbps because the slices contain three and two UEs.
+
+Section~\ref{sec:methodology} describes the traffic generator, the shaper that realizes the phase pattern of a dynamic scenario, and the per-segment fidelity audit. One consequence must be stated here, because it bounds what the pilot shows: the balanced scenario has a single phase and therefore installs no shaper, so its reported segment success rate is vacuous and is not evidence of shaper fidelity. That evidence can only come from the two dynamic scenarios, which remain to be run.
+
+\begin{table}[t]
+\centering
+\caption{Per-UE offered downlink traffic (Mbps). Phases alternate every 5~s; the balanced scenario has a single phase.}
+\label{tab:traffic}
+\begin{tabular}{lcccc}
+\toprule
+& \multicolumn{2}{c}{Phase 1} & \multicolumn{2}{c}{Phase 2}\\
+Scenario & A & B & A & B\\
+\midrule
+Balanced & 30 & 30 & --- & ---\\
+Slice-A-heavy & 36 & 21 & 44 & 9\\
+Slice-B-heavy & 28 & 33 & 12 & 57\\
+\bottomrule
+\end{tabular}
+\end{table}

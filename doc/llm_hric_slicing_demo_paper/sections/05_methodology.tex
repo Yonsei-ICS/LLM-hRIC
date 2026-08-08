@@ -1,0 +1,396 @@
+\section{Experimental Methodology}
+\label{sec:methodology}
+\label{sec:methodology-anchor}
+The campaign is defined by a single JSON specification,
+\texttt{experiments/five\_ue\_traffic\_scenarios\_v5.json}
+(\texttt{protocol\_version}~8, SHA-256 \texttt{7f1d5c03\ldots fea025d}), and executed by
+\texttt{experiments/experiment\_runner.py}. The specification fixes three traffic scenarios,
+three arms, five seeds, the 106-PRB cell, the 100~ms control period, the 50~ms monitor
+summary period, the 10~s rApp period, every phase duration, and every validity threshold.
+Nothing in the protocol below is a per-run operator decision. At launch the runner copies the
+specification over the static controller configuration --- the DDPG control period and the
+rApp period in \texttt{period\_ms}, \texttt{monitor.summary\_period\_ms},
+\texttt{operational\_min\_prb}/\texttt{operational\_max\_prb} into
+\texttt{control.min\_prb}/\texttt{control.max\_prb}, the cell PRB count
+\texttt{ddpg.cell\_prbs}, \texttt{ddpg.model\_version}, the channel-profile enable flag, and
+the spec-derived \texttt{exploration\_noise\_decay\_steps} --- and writes the merged
+configuration to \texttt{<run>/effective\_config.json}, which is the authoritative record of
+what a run actually executed with.
+
+\subsection{Compared control arms and their ablation}
+Three arms are compared. Their code identifiers are \texttt{llm\_only}, \texttt{ddpg\_only},
+and \texttt{llm\_guided\_ddpg}; in the text we call them LLM-only, DDPG-only (TD3-style), and
+LLM-guided. The generated tables emitted by \texttt{scripts/build\_results.py} label the same
+three arms ``LLM only'', ``TD3 only'', and ``LLM-guided TD3''.
+
+\begin{itemize}
+  \item \texttt{llm\_only} executes the rApp target. The published ratios are projected into
+  the intersection of the A1 guidance bounds and the operational envelope, converted to an
+  integer Slice-A budget, and commanded every 100~ms. The target itself is refreshed only
+  every 10~s, so this arm holds one action between rApp updates. No actor--critic is used and
+  no learner process is started.
+  \item \texttt{ddpg\_only} executes the learned actor. It is an ablation of guidance, not of
+  the task: it keeps the identical 24-dimensional state layout, the identical SLA-gated
+  reward with the same weights, the identical intent semantics (priority slice, protected
+  slice, floor $F$, and minimum priority ratio), and the identical calibration profile of its
+  seed. What is removed is the LLM itself. In \texttt{state\_vector} the guidance flag is
+  false, so both projected-target features are zeroed; the arm is bounded only by the
+  operational envelope and never intersects the A1 \texttt{policy\_constraints}; the
+  behavioral-cloning teacher term is disabled (\texttt{teacher\_mask}${}=0$, so the actor loss
+  reduces to the deterministic policy-gradient term plus the saturation penalty); and the
+  intent-triggered fallback to the LLM action does not exist.
+  \item \texttt{llm\_guided\_ddpg} commands a convex blend
+  $b_A=(1-w)\,b_A^{\mathrm{LLM}}+w\,b_A^{\mathrm{RL}}$ clipped to the active feasible
+  interval. The learned weight $w$ starts at $0$, rises by $0.01$ every ten safety updates
+  while the last 30 \emph{intent} outcomes are at least 95\% satisfied, is capped at
+  \texttt{max\_ddpg\_weight}${}=0.4$, and is reduced by $0.1$ (and forced to $0$ for command
+  purposes) after five consecutive \emph{intent} violations. The trigger is the
+  intent-satisfaction flag and not SLA satisfaction: \texttt{update\_guided\_safety} is
+  invoked with the per-transition intent-satisfied component, even though the fixed-length
+  window it appends to is misleadingly named \texttt{sla\_history}. The distinction is
+  material rather than cosmetic, because intent satisfaction is the strictly stronger of the
+  two conditions defined below and the two diverge widely in the pilot
+  (Section~\ref{sec:results}). During critic warm-up the commanded budget is additionally
+  dithered by $\pm2$ PRBs around the teacher. The commanded action, not the raw actor output,
+  is what enters replay.
+\end{itemize}
+
+Table~\ref{tab:proto-arms} summarizes the ablation. Because the objective and the state
+layout are shared, a difference between \texttt{ddpg\_only} and \texttt{llm\_guided\_ddpg}
+is \emph{not} attributable to a different task definition. It is not thereby attributable to
+guidance alone: Section~\ref{sec:limitations} records a residual confound in episode
+termination---the guided arm's terminal flag fires on every 10~s A1 policy version bump,
+whereas the unguided arm's fires only at an intent switch, so the two arms bootstrap over
+episodes of different length---and a single seed cannot separate policy effects from seed
+effects.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Ablation across the three arms. ``Intent semantics'' covers the priority/protected
+identities, the calibrated floor $F$, and the 55\% minimum priority ratio. The
+intent-violation row is the fallback to the LLM action after five consecutive intent
+violations; it is driven by intent satisfaction, not by SLA satisfaction.}
+\label{tab:proto-arms}
+\begin{tabular}{lccc}
+\toprule
+Component & LLM-only & DDPG-only & LLM-guided\\
+\midrule
+Intent semantics in reward      & yes & yes & yes\\
+24-D state layout               & yes & yes & yes\\
+Projected A1 target in state    & yes & zeroed & yes\\
+A1 guidance bounds applied      & yes & no & yes\\
+Operational 10--90\% envelope   & yes & yes & yes\\
+Learned actor--critic           & no  & yes & yes\\
+Teacher (BC) loss term          & --- & no  & yes\\
+Intent-violation LLM fallback   & --- & no  & yes\\
+Asynchronous learner started    & no  & yes & yes\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Run protocol and step budget}
+A run executes the phases of Table~\ref{tab:proto-phases}. Phase durations are converted to
+control steps by \texttt{\_phase\_steps} as
+$\operatorname{round}(\text{seconds}\times1000/\text{period})$; with the 100~ms period
+this yields 1{,}000 calibration, 36{,}000 training, and $1{,}800+1{,}800$ evaluation steps,
+i.e.\ 40{,}600 counted transitions per run. \texttt{\_validate\_run} compares the per-phase
+transition counts in \texttt{experiment\_steps} against these exact values and aborts the run
+on any mismatch, so a partially executed phase can never enter the results.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Per-run phase budget at the 100~ms control period.}
+\label{tab:proto-phases}
+\begin{tabular}{lrrll}
+\toprule
+Phase & Dur.\ (s) & Steps & Learning & Active intent\\
+\midrule
+\texttt{settle}        & 30   & ---     & ---      & bootstrap\\
+\texttt{calibration}   & 100  & 1{,}000 & replayed & bootstrap\\
+\texttt{intent\_switch}& var. & var.    & training only & regenerating\\
+\texttt{training}      & 3600 & 36{,}000& on       & alternating\\
+\texttt{intent1\_eval} & 180  & 1{,}800 & frozen   & Intent~1\\
+\texttt{intent2\_eval} & 180  & 1{,}800 & frozen   & Intent~2\\
+\midrule
+counted total          & 4060 & 40{,}600 & & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Before settling, the runner installs a bootstrap intent (Intent~1 with a 10~Mbps placeholder
+floor and no policy constraints), waits for the first rApp guidance, verifies UE reachability,
+and starts the iperf3 servers and clients. It then holds that state for 30~s while the runtime
+watchdog polls every subsystem, so the calibration sweep already observes a loaded cell.
+
+During training the active intent alternates every 600 control steps, i.e.\ every 60~s of
+\emph{counted} control, giving 60 blocks and therefore 30 blocks (18{,}000 steps) per
+direction. Between two blocks the controller does not pause: the runner spawns a worker that
+rewrites the intent and waits for the A1 policy and rApp guidance to be regenerated, while
+\texttt{run\_controller} keeps issuing actions under the phase label \texttt{intent\_switch}
+with \texttt{max\_steps=None}. Those transitions are logged, and during training they are also
+inserted into the replay, but they are excluded from the validated per-phase budget. The
+wall-clock spacing between intent switches therefore exceeds 60~s. Empirically the surplus is
+substantial: the asynchronous replay held 45{,}726 rows for the guided arm and 46{,}317 for
+the unguided arm against 1{,}000 prefilled plus 36{,}000 training transitions, i.e.\
+approximately $8.7\times10^3$ and $9.3\times10^3$ uncounted switch transitions per run.
+
+Exploration noise is scheduled against the specification rather than the static
+configuration: \texttt{exploration\_noise\_decay\_steps} is overridden to
+$\operatorname{round}(0.4\times36{,}000)=14{,}400$, so Gaussian action noise decays linearly
+from $0.2$ to $0.02$ over the first 40\% of training and leaves a 21{,}600-step low-noise
+exploitation tail before evaluation.
+
+Both evaluation phases are frozen. The runner sets the runtime state to
+\texttt{train=False, publish=False}, then calls \texttt{freeze()} on the Actor-snapshot
+watcher, which pins the serving Actor and sets \texttt{stats\_frozen}, so observation
+normalization and reward scaling also stop updating. The freeze is verifiable in the artifact:
+every arm reports exactly one distinct serving Actor version in each evaluation phase.
+
+\subsection{Calibration}
+Calibration is a fixed open-loop sweep, not a search and not a fourth policy. Slice~A is held
+at each of 25\%, 35\%, 50\%, 65\%, and 75\% for 200 control steps (20~s) each, driven through
+\texttt{experiment.fixed\_slice\_a\_ratio}, which makes the controller behave as a static
+allocator regardless of arm. Three quantities are then derived.
+
+\begin{enumerate}
+  \item \emph{Cell capacity.} The runner sums \texttt{dl\_th\_mbps} over slices per
+  \texttt{ts\_ms} in \texttt{network\_state} for the whole 100~s sweep and takes the
+  linearly interpolated 95th percentile of those per-summary cell totals. The result is stored
+  as \texttt{experiment.capacity\_mbps} and is the denominator of the normalized total and
+  priority throughput terms in the reward, so every reward value is relative to this per-seed
+  capacity estimate.
+  \item \emph{Protected-slice floor.} Per-slice throughput samples are bucketed by the sweep
+  level nearest to the acknowledged Slice-A ratio. For each intent the runner takes the
+  reference allocation (65\% Slice-A for Intent~1, 35\% for Intent~2), computes the
+  nearest-rank 10th percentile of the \emph{protected} slice throughput at that allocation,
+  and sets $F=0.90\times p_{10}$. The floor is therefore a 10\% margin below an already
+  pessimistic observed level, is per seed and per testbed, and is rendered into the
+  natural-language intent string with two decimals through the \texttt{\{floor\_mbps\}}
+  placeholder. Calibration raises and fails the run if $F\le0$ or if the reference allocation
+  is not itself feasible.
+  \item \emph{Guidance bounds.} A sweep level is labelled safe post hoc if its protected-slice
+  $p_{10}$ meets $F$ and it respects the intent's direction. Writing $\mathcal{S}$ for that
+  set, Intent~1 publishes Slice~A in $[55\%,\max\mathcal{S}]$ and Intent~2 publishes Slice~A
+  in $[\min\mathcal{S},45\%]$, with complementary bounds for Slice~B. These are exported as
+  A1 \texttt{policy\_constraints}.
+\end{enumerate}
+
+The 10--90\% envelope is \emph{not} a calibration product. It is the specification constant
+pair \texttt{operational\_min\_prb}${}=10$ / \texttt{operational\_max\_prb}${}=90$, copied into
+\texttt{control.min\_prb} / \texttt{control.max\_prb} before any run and applied by
+\texttt{\_global\_bounds} to every arm. For the 106-PRB cell it gives the integer interval
+$b_A\in[11,95]$. Only \texttt{llm\_only} and \texttt{llm\_guided\_ddpg} intersect the
+calibration bounds with this envelope; \texttt{ddpg\_only} sees the envelope alone. With the
+55\% minimum priority ratio the guided Intent-1 interval starts at
+$b_A^{\min}=\max(\lceil 55\cdot106/100\rceil,\,106-\lfloor 45\cdot106/100\rfloor)=59$ and the
+guided Intent-2 interval ends at $b_A^{\max}=47$, independently of $\mathcal{S}$.
+
+The calibration profile is written to
+\texttt{<scenario>/seed-<N>-calibration-profile.json} and reused by the remaining arms of the
+same (scenario, seed) cell when the profile version matches. All three arms of a seed thus
+share one capacity estimate, one floor, and one bound set, which is what makes the paired
+comparison meaningful. Finally the 1{,}000 calibration transitions are replayed into the
+learner buffer of the two learning arms with synthetic guidance that alternates every 100
+steps, and the agent's SLA history, violation counter, and guided weight are reset before and
+after the prefill so that calibration cannot bias the safety state machine.
+
+\subsection{Traffic generation}
+Each UE is served by one persistent iperf3 UDP client started inside the external data-network
+container and addressed to the UE PDU IP, and by one iperf3 server bound to that PDU IP inside
+the UE network namespace. There is exactly one stream and one port per UE; there is no
+separate burst stream. The client duration is the larger of 3600~s and the specification key
+\texttt{traffic\_max\_duration\_s}, i.e.\ 86{,}400~s, so that traffic never expires mid-run.
+
+For dynamic scenarios the client is offered that UE's \emph{phase-maximum} rate for the whole
+run and the phase pattern is realized in the network rather than at the source. The controller
+installs an HTB qdisc on the external data-network egress device (\texttt{root handle 1:},
+\texttt{r2q 100}, \texttt{default 999}, root and default classes at \texttt{1000mbit}), one
+class \texttt{1:10}$x$ per UE with a \texttt{pfifo limit 100} child and a \texttt{u32} filter
+matching the UE PDU address as a \texttt{/32}. Every 5~s the scheduler rewrites all five
+classes with a single batched \texttt{tc class change ... htb rate Xmbit ceil Xmbit}. The
+balanced scenario has a single phase, so no shaper is installed and the clients simply run at
+the constant 30~Mbps per-UE rate; \texttt{traffic\_summary.json} records this as
+\texttt{traffic\_backend}${}=$\texttt{iperf3} rather than \texttt{tc\_htb}.
+
+Shaper fidelity is audited per segment. At the end of each UE $\times$ 5~s segment the
+controller reads that UE's HTB class byte counter, computes the actual egress rate over the
+elapsed interval, and accepts the segment only if it lasted at least $0.8\times5=4$~s and
+delivered between 80\% and 125\% of the requested rate. The run-level
+\texttt{dynamic\_segment\_success\_rate} divides valid segments by
+$\lfloor D/5\rfloor$ (plus one if the remainder is at least 4~s) times five UEs, and the run is
+rejected below 0.95. In the balanced pilot the shaper is never installed, so the reported
+segment success rate of 100\% is vacuous and must not be read as evidence of shaper fidelity.
+
+Receiver-side goodput is measured from the UE TUN interface \texttt{rx\_bytes} delta over the
+measurement window. The reported loss percentage is
+$100\,(1-\text{received}/\text{offered})$ where ``offered'' is the scenario's nominal mean
+per-UE rate; it is an offered-versus-delivered figure computed at the receiver, not the
+iperf3 sender's own datagram-loss report. Traffic phase applications are logged to a
+\texttt{traffic\_events} table with planned and applied timestamps, and the trace is hashed so
+that different arms can be shown to have seen identical offered load.
+
+\subsection{Validity gates}
+Table~\ref{tab:proto-gates} lists every check applied by \texttt{\_validate\_run}. A raising
+check marks the run \texttt{failed}; the five-UE coverage check is non-fatal but marks the run
+\texttt{degraded}. \texttt{scripts/build\_results.py} discards anything that is not
+\texttt{status=complete} and \texttt{data\_quality=primary} before it opens a database, so
+neither class can reach a table.
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\caption{Validity gates. ``Spec'' checks read the campaign specification; ``code'' checks are
+hardcoded in \texttt{experiment\_runner.py}. Async-only checks apply to \texttt{ddpg\_only}
+and \texttt{llm\_guided\_ddpg}.}
+\label{tab:proto-gates}
+\begin{tabular}{llll}
+\toprule
+Check & Threshold & Source & Effect\\
+\midrule
+Per-phase transition count & exactly 1{,}000 / 36{,}000 / 1{,}800 / 1{,}800 & spec durations & fail\\
+RC apply success rate & $\geq0.99$ (\texttt{min\_apply\_success\_rate}) & spec & fail\\
+Mapped UEs & $\geq1$ under \texttt{allow\_ue\_churn}, else exactly 5 & spec & fail\\
+Transitions with effect coverage $\geq0.8$ & $\geq95\%$ & code & fail\\
+RC control latency p99 & $<20$~ms & code & fail\\
+Controller tick jitter p95 / p99 & $\leq120$ / $\leq150$~ms & spec & fail (async)\\
+Fresh-state action interval p95 & $\leq180$~ms & spec & fail (async)\\
+Controller stale-skip rate & $\leq0.5$ & spec & fail (async)\\
+Controller tick telemetry present & non-empty & code & fail (async)\\
+Traffic summary parseable & --- & code & fail\\
+Valid iperf UEs & $\geq1$ (\texttt{min\_valid\_traffic\_ues}) & spec & fail\\
+Traffic event success rate & $\geq0.99$ & spec & fail\\
+Dynamic segment success rate & $\geq0.95$ & spec & fail\\
+Dynamic-channel command success / coverage & 100\% & code & fail (if enabled)\\
+Five-UE coverage & $\geq0.90$ (\texttt{primary\_five\_ue\_coverage}) & spec & degrade\\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Two specification keys are computed and archived but never enforced and must not be described
+as gates: \texttt{max\_fresh\_action\_interval\_p99\_ms}${}=300$ is recorded in the validation
+block without an assertion, and \texttt{max\_summary\_age\_ms}${}=3000$ is never read by the
+runner. One gate is also weaker than it appears: the mapped-UE query counts distinct
+\texttt{ue\_id} values over the whole database without a run or time filter, so when several
+runs share one database it does not isolate the run under test. Five-UE coverage, which is
+computed strictly inside the run's own transition window, is the check that actually
+constrains per-run UE presence.
+
+Per-transition trainability is decided independently of these run-level gates. A transition
+enters the replay only if the control was acknowledged, at least one UE was active, the number
+of mapped UEs equals the number of active UEs, no counter reset occurred in the window, all
+metric sources were valid, and the action-effect window coverage was at least 0.8.
+
+\subsection{Reported metrics and their definitions}
+All phase metrics are computed by \texttt{analyze\_results.\_step\_metrics} over the
+transitions of a phase. Two definitions carry most of the interpretation and are used
+throughout Section~\ref{sec:results-anchor}:
+
+\begin{itemize}
+  \item \emph{SLA satisfaction} is the fraction of transitions whose normalized protected-slice
+  deficit is zero, i.e.\ the protected slice met its floor $F$ (or the floor was inapplicable
+  because $F\le0$ or the protected slice carried no UE).
+  \item \emph{Intent satisfaction} is the fraction of transitions that satisfy the SLA
+  \emph{and} command the priority slice at least its minimum ratio of 55\%. It is therefore a
+  strictly stronger condition, and the gap between the two is a commanded-allocation property,
+  not a throughput shortfall.
+\end{itemize}
+
+The remaining reported quantities are: SLA deficit area (the sum of positive normalized
+deficits over a phase), protected-slice 5th-percentile throughput, aggregate and per-slice
+RLC-derived throughput, UE-level and slice-level Jain fairness, commanded and KPM-measured PRB
+share, RLC buffer occupancy, receiver goodput and offered-versus-delivered loss, RC control
+latency, controller tick jitter, stale-state skip rate, learner TD error, and Actor
+diagnostics. The Actor diagnostics are: saturation rate (fraction of raw actor outputs at or
+beyond $0.02$/$0.98$), action-bin coverage (visited tenths of the unit action range, out of
+ten), and acknowledged-action boundary rate (fraction of commanded Slice-A budgets within half
+a PRB of an edge of that transition's own feasible interval). Early-phase diagnostics use the
+first 300 training transitions; ``reward AUC'' is the sum of raw rewards over that window.
+Downlink BLER and wideband CQI are recorded but are effectively unpopulated under the
+\texttt{static\_awgn} RFSimulator profile used here, and are consequently not interpreted as
+measured radio quality.
+
+\ifFullCampaign
+The complete campaign uses same-seed paired bootstrap confidence intervals.
+\else
+The complete campaign will use same-seed paired bootstrap confidence intervals.
+\fi
+A single-seed pilot cannot estimate run-to-run uncertainty; repeated windows inside one run
+are not treated as independent seeds.
+
+\subsection{Reproducibility}
+\textbf{Seeding.} Each run calls \texttt{random.seed(seed)} in the runner, and the agent seeds
+both Python's RNG and \texttt{torch} with the run seed in the controller process and again in
+the learner subprocess, which is launched with \texttt{--seed}. Dynamic-channel traces, when
+enabled, are drawn with derived seeds $s$, $s+10^4$, and $s+2\times10^4$ for the training and
+two evaluation phases. Arm execution order inside a (seed, scenario) cell is shuffled
+deterministically from the string \texttt{"seed:scenario"} so that arm order is not confounded
+with time. NumPy, CUDA kernels, and cuDNN determinism flags are not seeded or forced, and the
+learner advances on wall-clock rather than in lockstep with the controller; runs are therefore
+statistically, not bitwise, reproducible.
+
+\textbf{Isolation.} Every run gets its own result directory containing its checkpoint
+(\texttt{ddpg.pt}), Actor-snapshot directory, effective configuration, learner log, archived
+component logs, traffic summary and shaper-segment file, manifest, and an end-of-run SQLite
+backup of the database. The live database is \emph{not} per run: it is the single shared file
+\texttt{/tmp/llm\_hric/llm\_hric.sqlite3}. It is deleted, together with its WAL/SHM files and
+the actuator socket, only inside \texttt{restart\_stack}, which the runner invokes only when
+started with \texttt{--manage-stack}; that flag also tears down and relaunches the whole
+RFSimulator stack (\texttt{UE\_MODE=multi}, \texttt{UE\_COUNT=5}, monitor and guidance
+services enabled, standalone DDPG disabled) before every arm/seed and then waits up to 180~s
+for preflight. Campaign runs must therefore be launched with \texttt{--manage-stack};
+without it, a run appends to whatever database is already present.
+
+\textbf{Resume and failure handling.} \texttt{--resume} scans archived manifests and skips any
+(scenario, arm, seed) tuple already recorded as complete or degraded, making the campaign
+idempotent across interruptions; frozen-policy re-evaluation manifests are ignored by this
+scan, and dynamic-scenario runs produced by the superseded host-side termination path are
+deliberately not counted as complete and are retried. \texttt{--fail-fast} aborts after
+archiving the first failed run; otherwise failures are accumulated and re-raised at the end so
+that one bad cell does not cost the rest of the campaign. Preflight is mandatory and requires
+a GPU unless \texttt{--allow-no-gpu} is given.
+
+\textbf{Cost.} Measured from the run manifests, a single run takes 5{,}113--5{,}276~s
+(85.2--87.9~min) of wall clock against a 4{,}090~s nominal phase budget. The roughly 27\%
+overhead is dominated by the 64 intent switches per run (two after calibration, 60 between
+training blocks, and one before each evaluation), each of which waits for a fresh rApp
+inference at the 10~s rApp period, plus stack settling and traffic prefill. At the observed
+mean of 5{,}210~s per run, the complete $3\times3\times5$ campaign requires approximately
+65~hours of continuous testbed time excluding stack restarts.
+
+\textbf{Environment.} Table~\ref{tab:proto-env} lists the testbed. The single 8~GB laptop GPU
+hosts both the 4-bit quantized Gemma rApp and the TD3-style networks; the controller is
+restricted to one Torch thread and the learner to two so that inference cannot starve the
+100~ms control loop. The runner records the GPU model, driver, Python, and Torch/Transformers
+versions into every manifest, so a single future run restores this block exactly; the values
+below were probed on the testbed host because the pilot manifests were stored under
+\texttt{/tmp} and are no longer available.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Testbed hardware and software.}
+\label{tab:proto-env}
+\begin{tabular}{ll}
+\toprule
+Item & Value\\
+\midrule
+GPU & NVIDIA GeForce RTX 4060 Laptop, 8188~MiB, driver 580.173.02\\
+CPU & Intel Core i7-13650HX, 1 socket, 14 cores, 20 threads\\
+RAM & 31~GiB\\
+OS & Ubuntu 22.04.5 LTS, kernel 6.5.0-18-generic\\
+PyTorch & 2.7.0+cu118\\
+OAI revision & \texttt{cb0e5012}\\
+FlexRIC revision & \texttt{340c36bc}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Artifact custody.} The primary evidence for every number in
+Section~\ref{sec:results-anchor} is the per-run SQLite backup (1.0--1.3~GB per run) plus its
+manifest. These files were written under \texttt{/tmp} in the pilot and have since been lost
+with the host's temporary directory; the committed \texttt{generated/} CSV and \LaTeX{}
+artifacts are what remain. Future campaign runs must therefore use a \texttt{--results}
+directory outside \texttt{/tmp}, and the databases must be archived with the paper.

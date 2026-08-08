@@ -1,0 +1,15 @@
+\begin{table*}[t]
+\centering
+\caption{DDPG-only phase behavior. Slice-A ratio is the acknowledged command for S-NSSAI \texttt{1:ffffff}; full intent satisfaction requires both the protected-slice floor and the active priority-ratio condition.}
+\label{tab:ddpg-only-phases}
+\begin{tabular}{llrlrrrr}
+\toprule
+Scenario & Runs & Phase & Steps & Reward & SLA sat. (\%) & Intent sat. (\%) & Slice-A ratio (\%)\\
+\midrule
+balanced & 1 & Calibration & 1000 & 1.367 & 100.00 & 100.00 & 50.00 \\
+balanced & 1 & Training & 36000 & 0.797 & 98.84 & 66.44 & 52.46 \\
+balanced & 1 & Intent 1 evaluation & 1800 & 0.862 & 98.78 & 79.94 & 60.40 \\
+balanced & 1 & Intent 2 evaluation & 1800 & 0.867 & 99.83 & 69.78 & 44.29 \\
+\bottomrule
+\end{tabular}
+\end{table*}

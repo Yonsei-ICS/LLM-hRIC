@@ -1,0 +1,5 @@
+intent_satisfaction,mean_reward,mean_slice_a_ratio,phase,run_id,scenario,seed,sla_satisfaction,steps
+1.0,1.366670101461556,50.0,calibration,five-ue-traffic-v5-balanced-ddpg_only-seed1-1784801425929,balanced,1,1.0,1000.0
+0.6643888888888889,0.7970016022671108,52.45741666666667,training,five-ue-traffic-v5-balanced-ddpg_only-seed1-1784801425929,balanced,1,0.9884166666666667,36000.0
+0.7994444444444444,0.862104423410526,60.39888888888889,intent1_eval,five-ue-traffic-v5-balanced-ddpg_only-seed1-1784801425929,balanced,1,0.9877777777777778,1800.0
+0.6977777777777778,0.8672369116139583,44.29333333333334,intent2_eval,five-ue-traffic-v5-balanced-ddpg_only-seed1-1784801425929,balanced,1,0.9983333333333333,1800.0

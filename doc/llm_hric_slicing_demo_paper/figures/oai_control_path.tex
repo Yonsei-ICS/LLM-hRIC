@@ -1,0 +1,13 @@
+\begin{tikzpicture}[font=\scriptsize,node distance=4mm,
+ box/.style={draw,rounded corners=2pt,align=center,minimum width=.85\columnwidth,minimum height=7mm},
+ arrow/.style={-{Latex[length=1.7mm]},thick}]
+\node[box,fill=orange!10] (json) {External JSON: PLMN, SST, SD, min/max/dedicated};
+\node[box,fill=orange!10,below=of json] (xapp) {Persistent RC xApp and E42 association};
+\node[box,fill=blue!8,below=of xapp] (rc) {E2SM-RC Style 2 / Action 6\\RRM Policy Ratio List};
+\node[box,fill=blue!8,below=of rc] (mac) {gNB MAC policy table keyed by S-NSSAI};
+\node[box,fill=green!10,below=of mac] (sched) {HARQ/control first; slice budget for new data;\\unmatched UE best effort};
+\draw[arrow] (json)--(xapp);
+\draw[arrow] (xapp)--(rc);
+\draw[arrow] (rc)--(mac);
+\draw[arrow] (mac)--(sched);
+\end{tikzpicture}

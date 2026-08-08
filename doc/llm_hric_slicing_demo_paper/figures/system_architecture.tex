@@ -1,0 +1,35 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  node distance=7mm and 9mm,
+  block/.style={draw,rounded corners=2pt,minimum height=8mm,align=center,fill=white},
+  ran/.style={block,fill=blue!8}, ric/.style={block,fill=orange!10},
+  app/.style={block,fill=green!10}, db/.style={cylinder,shape border rotate=90,draw,aspect=0.25,minimum height=11mm,minimum width=16mm,fill=gray!10,align=center},
+  measure/.style={-{Latex[length=2mm]},thick,blue!70},
+  guide/.style={-{Latex[length=2mm]},thick,orange!85!black},
+  control/.style={-{Latex[length=2mm]},thick,red!70!black}
+]
+\node[ran] (core) {OAI 5GC\\AMF/SMF/UPF};
+\node[ran,right=of core,minimum width=22mm] (gnb) {OAI gNB\\106 PRBs};
+\node[ran,right=of gnb] (uesa) {Slice A\\UE1--UE3};
+\node[ran,below=of uesa] (uesb) {Slice B\\UE4--UE5};
+
+\node[ric,above=14mm of gnb] (monitor) {SM/KPM\\monitor xApps};
+\node[db,right=of monitor] (db) {SQLite\\state};
+\node[ric,right=of db] (ctrl) {near-RT controller\\TD3-style Actor};
+\node[app,above=10mm of db] (rapp) {Gemma rApp\\intent guider};
+\node[app,right=of rapp] (a1) {A1-like policy\\HTTP/SQLite};
+\node[app,above=10mm of ctrl] (learner) {asynchronous\\learner};
+
+\draw[measure] (gnb) -- node[left]{E2 indications} (monitor);
+\draw[measure] (monitor) -- (db);
+\draw[measure] (db) -- (rapp);
+\draw[measure] (db) -- (ctrl);
+\draw[measure,bend left=16] (db) to (learner);
+\draw[guide] (rapp) -- (a1);
+\draw[guide] (a1) -- (ctrl);
+\draw[control] (ctrl) -- node[right]{E2SM-RC} (gnb);
+\draw[control,dashed] (learner) -- node[right]{validated Actor} (ctrl);
+\draw[<->,thick] (core) -- node[above]{N2/N3} (gnb);
+\draw[<->,thick] (gnb) -- (uesa);
+\draw[<->,thick] (gnb) -- (uesb);
+\end{tikzpicture}

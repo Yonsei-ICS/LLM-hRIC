@@ -1,0 +1,70 @@
+{
+  "name": "five-ue-traffic-v4",
+  "protocol_version": 8,
+  "ddpg_model_version": 4,
+  "arms": [
+    "llm_guided_ddpg",
+    "llm_only",
+    "ddpg_only"
+  ],
+  "seeds": [1, 2, 3, 4, 5],
+  "channel_profile": "static_awgn",
+  "traffic_scenarios": [
+    {
+      "id": "balanced",
+      "period_s": 0,
+      "total_offered_mbps": 150,
+      "phases": [
+        {"1:ffffff": 30, "1:123456": 30}
+      ]
+    },
+    {
+      "id": "slice_a_heavy",
+      "period_s": 5,
+      "total_offered_mbps": 150,
+      "phases": [
+        {"1:ffffff": 36, "1:123456": 21},
+        {"1:ffffff": 44, "1:123456": 9}
+      ]
+    },
+    {
+      "id": "slice_b_heavy",
+      "period_s": 5,
+      "total_offered_mbps": 150,
+      "phases": [
+        {"1:ffffff": 28, "1:123456": 33},
+        {"1:ffffff": 12, "1:123456": 57}
+      ]
+    }
+  ],
+  "offered_load_mbps_per_ue": 30,
+  "cell_prbs": 106,
+  "control_period_ms": 100,
+  "monitor_summary_period_ms": 50,
+  "rapp_period_ms": 10000,
+  "settle_s": 30,
+  "calibration_s": 100,
+  "training_s": 600,
+  "training_intent_switch_s": 60,
+  "evaluation_s": 180,
+  "reverse_evaluation_s": 180,
+  "traffic_max_duration_s": 86400,
+  "operational_min_prb": 10,
+  "operational_max_prb": 90,
+  "allow_ue_churn": true,
+  "min_valid_traffic_ues": 1,
+  "primary_five_ue_coverage": 0.9,
+  "min_apply_success_rate": 0.99,
+  "min_traffic_event_success_rate": 0.99,
+  "min_dynamic_segment_success_rate": 0.95,
+  "min_burst_segment_success_rate": 0.95,
+  "min_effect_coverage": 0.8,
+  "max_summary_age_ms": 3000,
+  "max_controller_tick_jitter_p95_ms": 120,
+  "max_controller_tick_jitter_p99_ms": 150,
+  "max_fresh_action_interval_p95_ms": 180,
+  "max_fresh_action_interval_p99_ms": 300,
+  "max_stale_skip_rate": 0.5,
+  "intent_1": "Maximize total DL throughput, prioritize slice 1:ffffff, and keep aggregate DL throughput of slice 1:123456 at or above {floor_mbps} Mbps.",
+  "intent_2": "Maximize total DL throughput, prioritize slice 1:123456, and keep aggregate DL throughput of slice 1:ffffff at or above {floor_mbps} Mbps."
+}

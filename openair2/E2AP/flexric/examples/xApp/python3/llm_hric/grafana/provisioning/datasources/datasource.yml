@@ -1,0 +1,9 @@
+apiVersion: 1
+datasources:
+  - name: LLM-hRIC SQLite
+    uid: llmhric_sqlite
+    type: frser-sqlite-datasource
+    access: proxy
+    isDefault: true
+    jsonData:
+      path: /tmp/llm_hric/llm_hric.sqlite3

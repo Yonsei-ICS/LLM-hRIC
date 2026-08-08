@@ -1,0 +1,17 @@
+services:
+  llm-hric-grafana:
+    image: grafana/grafana-oss:latest
+    container_name: llm-hric-grafana
+    environment:
+      - GF_INSTALL_PLUGINS=frser-sqlite-datasource
+      - GF_DASHBOARDS_MIN_REFRESH_INTERVAL=500ms
+      - GF_USERS_DEFAULT_THEME=light
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./provisioning/datasources/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+      - ./provisioning/dashboards/dashboard.yml:/etc/grafana/provisioning/dashboards/dashboard.yml:ro
+      - ./dashboards:/var/lib/grafana/dashboards:ro
+      - /tmp/llm_hric:/tmp/llm_hric

@@ -1,0 +1,13 @@
+\begin{table*}[t]
+\centering
+\caption{DDPG-only training behavior by priority direction. Throughput is RLC-derived Mbps. The minimum priority ratio is part of the machine-readable intent objective, not the protected-slice throughput SLA.}
+\label{tab:ddpg-only-priority}
+\begin{tabular}{llrrrrrrr}
+\toprule
+Scenario & Runs & Priority slice & Action (\%) & Required (\%) & Priority TH & Protected TH & SLA sat. (\%) & Intent sat. (\%)\\
+\midrule
+balanced & 1 & 1:123456 & 54.80 & 55.00 & 48.97 & 41.82 & 99.38 & 56.29 \\
+balanced & 1 & 1:ffffff & 59.71 & 55.00 & 55.58 & 36.36 & 98.30 & 76.59 \\
+\bottomrule
+\end{tabular}
+\end{table*}

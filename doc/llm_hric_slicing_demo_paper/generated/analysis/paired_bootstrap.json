@@ -1,0 +1,272 @@
+[
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_guided_ddpg",
+    "arm_b": "ddpg_only",
+    "metric": "early_sla_violation_rate",
+    "mean_difference": -0.12,
+    "ci_low": -0.12,
+    "ci_high": -0.12,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_guided_ddpg",
+    "arm_b": "ddpg_only",
+    "metric": "early_cumulative_reward",
+    "mean_difference": 103.87259263731116,
+    "ci_low": 103.87259263731116,
+    "ci_high": 103.87259263731116,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_guided_ddpg",
+    "arm_b": "ddpg_only",
+    "metric": "intent1_intent_satisfaction_rate",
+    "mean_difference": 0.2005555555555556,
+    "ci_low": 0.2005555555555556,
+    "ci_high": 0.2005555555555556,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_guided_ddpg",
+    "arm_b": "ddpg_only",
+    "metric": "intent2_intent_satisfaction_rate",
+    "mean_difference": 0.30166666666666664,
+    "ci_low": 0.30166666666666664,
+    "ci_high": 0.30166666666666664,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_guided_ddpg",
+    "arm_b": "ddpg_only",
+    "metric": "intent1_mean_total_dl_th_mbps",
+    "mean_difference": 1.853126970671937,
+    "ci_low": 1.853126970671937,
+    "ci_high": 1.853126970671937,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_guided_ddpg",
+    "arm_b": "ddpg_only",
+    "metric": "intent2_mean_total_dl_th_mbps",
+    "mean_difference": 2.701646264152643,
+    "ci_low": 2.701646264152643,
+    "ci_high": 2.701646264152643,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_guided_ddpg",
+    "arm_b": "ddpg_only",
+    "metric": "traffic_step_sla_recovery_mean_s",
+    "mean_difference": NaN,
+    "ci_low": NaN,
+    "ci_high": NaN,
+    "n": 0
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_guided_ddpg",
+    "arm_b": "ddpg_only",
+    "metric": "intent1_sla_deficit_auc",
+    "mean_difference": -2.1898695360611247,
+    "ci_low": -2.1898695360611247,
+    "ci_high": -2.1898695360611247,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_guided_ddpg",
+    "arm_b": "ddpg_only",
+    "metric": "intent2_sla_deficit_auc",
+    "mean_difference": -0.09224186307519641,
+    "ci_low": -0.09224186307519641,
+    "ci_high": -0.09224186307519641,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_guided_ddpg",
+    "arm_b": "llm_only",
+    "metric": "early_sla_violation_rate",
+    "mean_difference": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.0,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_guided_ddpg",
+    "arm_b": "llm_only",
+    "metric": "early_cumulative_reward",
+    "mean_difference": -15.07888368090147,
+    "ci_low": -15.07888368090147,
+    "ci_high": -15.07888368090147,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_guided_ddpg",
+    "arm_b": "llm_only",
+    "metric": "intent1_intent_satisfaction_rate",
+    "mean_difference": 0.0005555555555555314,
+    "ci_low": 0.0005555555555555314,
+    "ci_high": 0.0005555555555555314,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_guided_ddpg",
+    "arm_b": "llm_only",
+    "metric": "intent2_intent_satisfaction_rate",
+    "mean_difference": 0.005555555555555536,
+    "ci_low": 0.005555555555555536,
+    "ci_high": 0.005555555555555536,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_guided_ddpg",
+    "arm_b": "llm_only",
+    "metric": "intent1_mean_total_dl_th_mbps",
+    "mean_difference": 2.771135049711404,
+    "ci_low": 2.771135049711404,
+    "ci_high": 2.771135049711404,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_guided_ddpg",
+    "arm_b": "llm_only",
+    "metric": "intent2_mean_total_dl_th_mbps",
+    "mean_difference": 4.301195849509497,
+    "ci_low": 4.301195849509497,
+    "ci_high": 4.301195849509497,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_guided_ddpg",
+    "arm_b": "llm_only",
+    "metric": "traffic_step_sla_recovery_mean_s",
+    "mean_difference": NaN,
+    "ci_low": NaN,
+    "ci_high": NaN,
+    "n": 0
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_guided_ddpg",
+    "arm_b": "llm_only",
+    "metric": "intent1_sla_deficit_auc",
+    "mean_difference": -0.02647975077881627,
+    "ci_low": -0.02647975077881627,
+    "ci_high": -0.02647975077881627,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_guided_ddpg",
+    "arm_b": "llm_only",
+    "metric": "intent2_sla_deficit_auc",
+    "mean_difference": -0.35354146551116256,
+    "ci_low": -0.35354146551116256,
+    "ci_high": -0.35354146551116256,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_only",
+    "arm_b": "ddpg_only",
+    "metric": "early_sla_violation_rate",
+    "mean_difference": -0.12,
+    "ci_low": -0.12,
+    "ci_high": -0.12,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_only",
+    "arm_b": "ddpg_only",
+    "metric": "early_cumulative_reward",
+    "mean_difference": 118.95147631821263,
+    "ci_low": 118.95147631821263,
+    "ci_high": 118.95147631821263,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_only",
+    "arm_b": "ddpg_only",
+    "metric": "intent1_intent_satisfaction_rate",
+    "mean_difference": 0.20000000000000007,
+    "ci_low": 0.20000000000000007,
+    "ci_high": 0.20000000000000007,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_only",
+    "arm_b": "ddpg_only",
+    "metric": "intent2_intent_satisfaction_rate",
+    "mean_difference": 0.2961111111111111,
+    "ci_low": 0.2961111111111111,
+    "ci_high": 0.2961111111111111,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_only",
+    "arm_b": "ddpg_only",
+    "metric": "intent1_mean_total_dl_th_mbps",
+    "mean_difference": -0.9180080790394669,
+    "ci_low": -0.9180080790394669,
+    "ci_high": -0.9180080790394669,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_only",
+    "arm_b": "ddpg_only",
+    "metric": "intent2_mean_total_dl_th_mbps",
+    "mean_difference": -1.5995495853568542,
+    "ci_low": -1.5995495853568542,
+    "ci_high": -1.5995495853568542,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_only",
+    "arm_b": "ddpg_only",
+    "metric": "traffic_step_sla_recovery_mean_s",
+    "mean_difference": NaN,
+    "ci_low": NaN,
+    "ci_high": NaN,
+    "n": 0
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_only",
+    "arm_b": "ddpg_only",
+    "metric": "intent1_sla_deficit_auc",
+    "mean_difference": -2.1633897852823085,
+    "ci_low": -2.1633897852823085,
+    "ci_high": -2.1633897852823085,
+    "n": 1
+  },
+  {
+    "scenario": "balanced",
+    "arm_a": "llm_only",
+    "arm_b": "ddpg_only",
+    "metric": "intent2_sla_deficit_auc",
+    "mean_difference": 0.26129960243596617,
+    "ci_low": 0.26129960243596617,
+    "ci_high": 0.26129960243596617,
+    "n": 1
+  }
+]

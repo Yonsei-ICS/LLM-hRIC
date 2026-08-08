@@ -1,0 +1,21 @@
+\begin{table*}[t]
+\centering
+\caption{Direct balanced seed-1 comparison with the unguided \texttt{ddpg\_only} arm. Percentage deltas are percentage-point differences. Lower is better for SLA violation, saturation, and TD error.}
+\label{tab:guided-vs-ddpg}
+\begin{tabular}{lrrr}
+\toprule
+Metric & LLM-guided TD3 & DDPG-only (TD3-style) & Guided $-$ DDPG-only\\
+\midrule
+Intent 1 satisfaction (\%) & 100.00 & 79.94 & +20.06 \\
+Intent 2 satisfaction (\%) & 99.94 & 69.78 & +30.17 \\
+Early SLA violation (\%) & 0.00 & 12.00 & -12.00 \\
+Early reward AUC & 261.43 & 157.55 & +103.87 \\
+Intent 1 total DL TH (Mbps) & 97.35 & 95.49 & +1.85 \\
+Intent 2 total DL TH (Mbps) & 96.44 & 93.73 & +2.70 \\
+Intent 1 protected p5 TH (Mbps) & 32.60 & 25.69 & +6.92 \\
+Intent 2 protected p5 TH (Mbps) & 34.35 & 33.50 & +0.85 \\
+Training Actor saturation (\%) & 14.74 & 0.40 & +14.34 \\
+Learner mean TD error & 0.0830 & 0.0558 & +0.0272 \\
+\bottomrule
+\end{tabular}
+\end{table*}

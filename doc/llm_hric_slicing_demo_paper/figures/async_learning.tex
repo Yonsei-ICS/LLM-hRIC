@@ -1,0 +1,11 @@
+\begin{tikzpicture}[font=\scriptsize,node distance=5mm,
+ box/.style={draw,rounded corners=2pt,align=center,minimum width=.72\columnwidth,minimum height=7mm},
+ arrow/.style={-{Latex[length=1.7mm]},thick}]
+\node[box,fill=blue!8] (replay) {Raw replay: $s_t$, ACK action, $r_t$, $s_{t+1}$, provenance};
+\node[box,fill=green!10,below=of replay] (learn) {Independent learner: twin critics, delayed Actor update};
+\node[box,fill=orange!10,below=of learn] (validate) {Holdout validation: finite, legal, Q, shift, saturation};
+\node[box,fill=red!6,below=of validate] (serve) {Atomic serving-Actor swap at controller tick};
+\draw[arrow] (replay)--(learn);
+\draw[arrow] (learn)--(validate);
+\draw[arrow] (validate)--(serve);
+\end{tikzpicture}

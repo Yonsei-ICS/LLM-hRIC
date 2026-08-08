@@ -1,0 +1,302 @@
+{
+  "db_path": "/tmp/llm_hric/llm_hric.sqlite3",
+  "period_ms": {
+    "llm": 10000,
+    "ddpg": 100
+  },
+  "traffic": {
+    "ext_dn_container": "rfsim5g-oai-ext-dn",
+    "ext_dn_ip": "192.168.72.135",
+    "route_gateway": "192.168.72.134",
+    "route_dev": "eth0",
+    "ping_attempts": 5,
+    "dynamic_shaper_dev": "eth0",
+    "dynamic_shaper_root_rate": "1000mbit",
+    "dynamic_shaper_queue_packets": 100,
+    "dynamic_shaper_min_rate_coverage": 0.8,
+    "dynamic_shaper_max_rate_coverage": 1.25
+  },
+  "rfsim_channel": {
+    "enabled": false,
+    "model": "TDL_A",
+    "model_name": "rfsimu_channel_enB0",
+    "telnet_port": 9090,
+    "netns_python": "/home/ics1/anaconda3/bin/python",
+    "forgetfact": 0.9,
+    "delay_spread_s": 3e-08,
+    "event_period_s": 5,
+    "calibration_sample_s": 10,
+    "noise_candidates_db": [-35, -30, -25, -20, -15]
+  },
+  "llm": {
+    "provider": "transformers",
+    "base_url": "http://127.0.0.1:8000/v1",
+    "api_key_env": "OPENAI_API_KEY",
+    "model": "google/gemma-4-E2B-it",
+    "model_class": "AutoModelForCausalLM",
+    "device_map": {
+      "": 0
+    },
+    "torch_dtype": "float16",
+    "max_new_tokens": 256,
+    "temperature": 0.0,
+    "timeout_s": 10,
+    "trust_remote_code": false,
+    "local_files_only": true,
+    "allow_fallback": false,
+    "require_real_model": true,
+    "quantization": "4bit",
+    "max_time_s": 30,
+    "intent_poll_ms": 200,
+    "state_window_ms": 10000,
+    "state_window_count": 3,
+    "guidance_bound_tolerance_prb": 10,
+    "priority_min_gap_prb": 0,
+    "processor_model": "google/gemma-4-E2B-it"
+  },
+  "a1": {
+    "host": "127.0.0.1",
+    "port": 8088,
+    "transport": "http"
+  },
+  "control": {
+    "policy_id": "slice-prb-guidance",
+    "policy_file": "/tmp/llm_hric/current_prb_policy.json",
+    "rc_xapp": "/home/ics1/openairinterface5g/openair2/E2AP/flexric/build/examples/xApp/c/rc_slice_ctrl/xapp_rc_slice_ctrl",
+    "actuator_socket": "/tmp/llm_hric/rc_slice_ctrl.sock",
+    "actuator_timeout_s": 5,
+    "min_prb": 10,
+    "max_prb": 90,
+    "apply_mode": "gemma_then_fused"
+  },
+  "monitor": {
+    "source": "flexric_sm",
+    "subscription_interval_ms": 10,
+    "summary_period_ms": 50,
+    "auto_rnti_from_gnb_log": true,
+    "gnb_log": "/tmp/llm_hric/e2e_rfsim/logs/gnb.log",
+    "nrue_log_dir": "/tmp/llm_hric/e2e_rfsim/logs",
+    "rnti_slice_map": [
+      {
+        "rnti": "0xfc8c",
+        "ue_id": "ue1",
+        "plmn": "20899",
+        "sst": 1,
+        "sd": "0xffffff"
+      },
+      {
+        "rnti": "0x500c",
+        "ue_id": "ue2",
+        "plmn": "20899",
+        "sst": 1,
+        "sd": "0xffffff"
+      },
+      {
+        "rnti": "0x08d8",
+        "ue_id": "ue3",
+        "plmn": "20899",
+        "sst": 1,
+        "sd": "0xffffff"
+      },
+      {
+        "rnti": "0x96cc",
+        "ue_id": "ue4",
+        "plmn": "20899",
+        "sst": 1,
+        "sd": "0x123456"
+      },
+      {
+        "rnti": "0xb819",
+        "ue_id": "ue5",
+        "plmn": "20899",
+        "sst": 1,
+        "sd": "0x123456"
+      }
+    ],
+    "tun_interfaces": [
+      {
+        "netns": "ue1",
+        "ifname": "oaitun_ue1",
+        "ue_id": "ue1",
+        "slice_key": "1:ffffff"
+      },
+      {
+        "netns": "ue2",
+        "ifname": "oaitun_ue1",
+        "ue_id": "ue2",
+        "slice_key": "1:ffffff"
+      },
+      {
+        "netns": "ue3",
+        "ifname": "oaitun_ue1",
+        "ue_id": "ue3",
+        "slice_key": "1:ffffff"
+      },
+      {
+        "netns": "ue4",
+        "ifname": "oaitun_ue1",
+        "ue_id": "ue4",
+        "slice_key": "1:123456"
+      },
+      {
+        "netns": "ue5",
+        "ifname": "oaitun_ue1",
+        "ue_id": "ue5",
+        "slice_key": "1:123456"
+      }
+    ]
+  },
+  "ue_catalog": [
+    {
+      "ue_id": "ue1",
+      "index": 1,
+      "imsi": "208990100001100",
+      "dnn": "oai",
+      "sst": 1,
+      "sd": "0xffffff",
+      "netns": "ue1",
+      "pdu_subnet": "12.1.1.0/24",
+      "pdu_ip": "12.1.1.2",
+      "iperf_port": 5201
+    },
+    {
+      "ue_id": "ue2",
+      "index": 2,
+      "imsi": "208990100001101",
+      "dnn": "oai",
+      "sst": 1,
+      "sd": "0xffffff",
+      "netns": "ue2",
+      "pdu_subnet": "12.1.1.0/24",
+      "pdu_ip": "12.1.1.3",
+      "iperf_port": 5202
+    },
+    {
+      "ue_id": "ue3",
+      "index": 3,
+      "imsi": "208990100001102",
+      "dnn": "oai",
+      "sst": 1,
+      "sd": "0xffffff",
+      "netns": "ue3",
+      "pdu_subnet": "12.1.1.0/24",
+      "pdu_ip": "12.1.1.4",
+      "iperf_port": 5203
+    },
+    {
+      "ue_id": "ue4",
+      "index": 4,
+      "imsi": "208990100001103",
+      "dnn": "openairinterface",
+      "sst": 1,
+      "sd": "0x123456",
+      "netns": "ue4",
+      "pdu_subnet": "12.1.2.0/24",
+      "pdu_ip": "12.1.2.2",
+      "iperf_port": 5204
+    },
+    {
+      "ue_id": "ue5",
+      "index": 5,
+      "imsi": "208990100001104",
+      "dnn": "openairinterface",
+      "sst": 1,
+      "sd": "0x123456",
+      "netns": "ue5",
+      "pdu_subnet": "12.1.2.0/24",
+      "pdu_ip": "12.1.2.3",
+      "iperf_port": 5205
+    }
+  ],
+  "slice_catalog": [
+    {
+      "plmn": "20899",
+      "sst": 1,
+      "sd": "0xffffff"
+    },
+    {
+      "plmn": "20899",
+      "sst": 1,
+      "sd": "0x123456"
+    }
+  ],
+  "reward": {
+    "total_throughput": 1.0,
+    "priority_throughput": 0.5,
+    "sla_violation": 1.0,
+    "sla_deficit": 2.0,
+    "bler": 0.2,
+    "action_churn": 0.1,
+    "priority_shortfall": 1.0
+  },
+  "ddpg": {
+    "model_version": 4,
+    "state_feature_version": 3,
+    "checkpoint": "/tmp/llm_hric/ddpg_prb_v4.pt",
+    "action_dim": 1,
+    "hidden_width": 128,
+    "max_action": 1.0,
+    "cell_prbs": 106,
+    "gradient_clip_norm": 1.0,
+    "replay_size": 100000,
+    "batch_size": 128,
+    "gamma": 0.95,
+    "tau": 0.005,
+    "actor_lr": 0.0001,
+    "critic_lr": 0.0005,
+    "critic_learning_starts": 128,
+    "learning_starts": 512,
+    "actor_update_interval": 2,
+    "normalization_freeze_transitions": 1000,
+    "checkpoint_interval_transitions": 250,
+    "action_bins": 10,
+    "exploration_noise_start": 0.2,
+    "exploration_noise_end": 0.02,
+    "exploration_noise_decay_steps": 6000,
+    "target_policy_noise": 0.1,
+    "target_policy_noise_clip": 0.25,
+    "actor_saturation_logit_limit": 2.944,
+    "actor_saturation_penalty_weight": 0.01,
+    "max_state_age_ms": 1000,
+    "min_effect_coverage": 0.8,
+    "transition_observation_ms": 100,
+    "sla_window": 30,
+    "sla_fallback_windows": 5,
+    "guided_weight_update_interval": 10,
+    "bc_full_weight_actor_steps": 500,
+    "bc_decay_actor_steps": 1000,
+    "min_bc_weight": 0.1,
+    "max_ddpg_weight": 0.4,
+    "async_training": {
+      "enabled": true,
+      "snapshot_dir": "/tmp/llm_hric/actor_snapshots",
+      "min_replay_transitions": 1000,
+      "learner_poll_ms": 100,
+      "ingest_batch_size": 2048,
+      "max_catchup_updates": 32,
+      "controller_torch_num_threads": 1,
+      "torch_num_threads": 2,
+      "publish_every_actor_updates": 50,
+      "publish_min_interval_s": 5,
+      "snapshot_poll_ms": 500,
+      "promotion_holdout_size": 1024,
+      "max_promotion_saturation": 0.4,
+      "max_promotion_q_drop": 0.02,
+      "max_promotion_action_shift": 0.2,
+      "checkpoint_every_updates": 250,
+      "require_initial_snapshot": true,
+      "initial_snapshot_timeout_s": 120,
+      "force_promotion_after_rejections": 6
+    },
+    "state_normalization": {
+      "epsilon": 1e-08,
+      "clip": 5.0,
+      "min_std": 0.05
+    },
+    "reward_scaling": {
+      "gamma": 0.95,
+      "epsilon": 1e-08,
+      "clip": 10.0
+    }
+  }
+}

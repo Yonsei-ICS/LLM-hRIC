@@ -1,0 +1,69 @@
+\documentclass[conference]{IEEEtran}
+
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage{cite}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,calc,shapes.geometric}
+\usepackage{placeins}
+
+\newcommand{\affiliationYonsei}{School of Electrical and Electronic Engineering, Yonsei University, Republic of Korea}
+\newcommand{\affiliationETRI}{ICT Strategy Research Laboratory, Electronics and Telecommunications Research Institute, Republic of Korea}
+\newcommand{\affiliationSUTD}{Information Systems Technology and Design, Singapore University of Technology and Design, Singapore}
+% TODO(authors): replace with the public artifact URL before submission.
+\newcommand{\codeurl}{https://example.org/anonymous/llm-hric-oai}
+% \url reads its argument verbatim, so \url{\codeurl} would typeset the macro
+% name. Expand the macro exactly once before \url sees it.
+\newcommand{\codeurlprinted}{\expandafter\url\expandafter{\codeurl}}
+\newcommand{\snssaiA}{1:\texttt{ffffff}}
+\newcommand{\snssaiB}{1:\texttt{123456}}
+\newcommand{\systemname}{LLM-hRIC}
+\newcommand{\ValidRunCount}{0}
+\newcommand{\ExpectedRunCount}{45}
+\newcommand{\AvailableScenarioCount}{0}
+\newcommand{\AvailableSeedCount}{0}
+\newif\ifFullCampaign
+\FullCampaignfalse
+\InputIfFileExists{generated/results_status.tex}{}{}
+
+\title{From Guidance to PRBs: Deploying LLM-hRIC for Network Slicing in OAI}
+
+\author{
+\IEEEauthorblockN{Lingyan Bao\IEEEauthorrefmark{1}, Sinwoong Yun\IEEEauthorrefmark{2}, Jemin Lee\IEEEauthorrefmark{1}, and Tony Q. S. Quek\IEEEauthorrefmark{3}}
+\IEEEauthorblockA{\IEEEauthorrefmark{1}\affiliationYonsei}
+\IEEEauthorblockA{\IEEEauthorrefmark{2}\affiliationETRI}
+\IEEEauthorblockA{\IEEEauthorrefmark{3}\affiliationSUTD}
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This appendix accompanies the LLM-empowered hierarchical RAN intelligent control (LLM-hRIC) framework paper~\cite{bao2026llmhric} and reports an end-to-end deployment of that framework on OpenAirInterface (OAI) and FlexRIC. The framework itself, in which an LLM-empowered non-real-time RIC guides a reinforcement-learning implementer in the near-real-time RIC, is established in the companion paper and is not re-derived here. Instead we document how it was carried from the simulated integrated-access-and-backhaul power-allocation use case to O-RAN network slicing on a running radio stack, where the controlled quantity is the per-S-NSSAI downlink physical resource block (PRB) budget. We extend the OAI downlink scheduler with S-NSSAI-aware physical resource block (PRB) budgets and expose them through an E2SM-RC Style~2 control action. A Gemma-based rApp summarizes 30~s of slice state every 10~s and publishes intent-conditioned PRB targets through an A1-like interface. A 100~ms near-RT controller combines that guidance with 50~ms RAN measurements and a TD3-style deterministic actor--critic trained asynchronously from acknowledged controls and subsequent RAN observations. The testbed comprises an OAI 5G core, one 106-PRB gNB, and five RFSimulator UEs divided across two slices. \ifFullCampaign The complete three-scenario, five-seed campaign evaluates guided control against LLM-only and unguided learning baselines.\else A balanced-load, single-seed pilot demonstrates the complete closed loop and shows encouraging improvements in intent satisfaction and aggregate throughput. These observations are reported without statistical claims.\fi
+\end{abstract}
+
+\begin{IEEEkeywords}
+O-RAN, OpenAirInterface, network slicing, large language model, reinforcement learning, E2SM-RC, physical resource block
+\end{IEEEkeywords}
+
+\input{sections/01_introduction}
+\input{sections/02_scenario}
+\input{sections/03_oai_implementation}
+% The deployment section is split across two files: 04a opens the section and
+% covers the data and guidance paths; 04b continues with control and learning.
+% Their order is mandatory (04b begins at \subsection level).
+\input{sections/04a_data_and_llm}
+\input{sections/04b_control_and_learning}
+\input{sections/05_methodology}
+\input{sections/06_results}
+\input{sections/07_discussion}
+\input{sections/08_conclusion}
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+\end{document}

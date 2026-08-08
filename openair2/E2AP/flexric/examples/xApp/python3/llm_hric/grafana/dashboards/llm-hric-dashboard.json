@@ -1,0 +1,930 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "frser-sqlite-datasource",
+        "uid": "llmhric_sqlite"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "lg",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": false
+      },
+      "targets": [
+        {
+          "queryText": "WITH requested AS (SELECT intent,version FROM intent_inputs WHERE active=1 ORDER BY version DESC LIMIT 1), applied AS (SELECT intent,version FROM a1_policy_summary WHERE active=1 ORDER BY version DESC LIMIT 1) SELECT requested.intent AS requested_intent,requested.version AS intent_version,applied.intent AS active_policy_intent,applied.version AS policy_version,CASE WHEN requested.intent=applied.intent THEN 'active' ELSE 'generating' END AS policy_status FROM requested LEFT JOIN applied ON 1=1;",
+          "queryType": "table",
+          "rawQueryText": "WITH requested AS (SELECT intent,version FROM intent_inputs WHERE active=1 ORDER BY version DESC LIMIT 1), applied AS (SELECT intent,version FROM a1_policy_summary WHERE active=1 ORDER BY version DESC LIMIT 1) SELECT requested.intent AS requested_intent,requested.version AS intent_version,applied.intent AS active_policy_intent,applied.version AS policy_version,CASE WHEN requested.intent=applied.intent THEN 'active' ELSE 'generating' END AS policy_status FROM requested LEFT JOIN applied ON 1=1;",
+          "refId": "A",
+          "timeColumns": [
+            "time",
+            "ts"
+          ]
+        }
+      ],
+      "title": "Current LLM Intent",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "frser-sqlite-datasource",
+        "uid": "llmhric_sqlite"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "queryText": "WITH latest AS (SELECT MAX(ts_ms) AS ts_ms FROM a1_policy_summary WHERE active = 1), age AS (SELECT CASE WHEN ts_ms IS NULL THEN NULL ELSE CAST(((julianday('now') - 2440587.5) * 86400000 - ts_ms) AS INTEGER) END AS value FROM latest) SELECT CASE WHEN value IS NULL THEN NULL WHEN value < 0 THEN 0 ELSE value END AS last_a1_update_age FROM age;",
+          "queryType": "table",
+          "rawQueryText": "WITH latest AS (SELECT MAX(ts_ms) AS ts_ms FROM a1_policy_summary WHERE active = 1), age AS (SELECT CASE WHEN ts_ms IS NULL THEN NULL ELSE CAST(((julianday('now') - 2440587.5) * 86400000 - ts_ms) AS INTEGER) END AS value FROM latest) SELECT CASE WHEN value IS NULL THEN NULL WHEN value < 0 THEN 0 ELSE value END AS last_a1_update_age FROM age;",
+          "refId": "A",
+          "timeColumns": [
+            "time",
+            "ts"
+          ]
+        }
+      ],
+      "title": "A1 Update Age",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "frser-sqlite-datasource",
+        "uid": "llmhric_sqlite"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "queryText": "WITH latest AS (SELECT MAX(ts_ms) AS ts_ms FROM ddpg_actions), age AS (SELECT CASE WHEN ts_ms IS NULL THEN NULL ELSE CAST(((julianday('now') - 2440587.5) * 86400000 - ts_ms) AS INTEGER) END AS value FROM latest) SELECT CASE WHEN value IS NULL THEN NULL WHEN value < 0 THEN 0 ELSE value END AS last_ddpg_action_age FROM age;",
+          "queryType": "table",
+          "rawQueryText": "WITH latest AS (SELECT MAX(ts_ms) AS ts_ms FROM ddpg_actions), age AS (SELECT CASE WHEN ts_ms IS NULL THEN NULL ELSE CAST(((julianday('now') - 2440587.5) * 86400000 - ts_ms) AS INTEGER) END AS value FROM latest) SELECT CASE WHEN value IS NULL THEN NULL WHEN value < 0 THEN 0 ELSE value END AS last_ddpg_action_age FROM age;",
+          "refId": "A",
+          "timeColumns": [
+            "time",
+            "ts"
+          ]
+        }
+      ],
+      "title": "DDPG Decision Age",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "frser-sqlite-datasource",
+        "uid": "llmhric_sqlite"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "queryText": "WITH indications AS (SELECT ts_ms, MIN(recv_ts_ms) AS recv_ts_ms FROM kpm_measurements_raw GROUP BY ts_ms ORDER BY ts_ms DESC LIMIT 2) SELECT CASE WHEN COUNT(*) < 2 THEN NULL ELSE MAX(recv_ts_ms) - MIN(recv_ts_ms) END AS kpm_update_interval FROM indications;",
+          "queryType": "table",
+          "rawQueryText": "WITH indications AS (SELECT ts_ms, MIN(recv_ts_ms) AS recv_ts_ms FROM kpm_measurements_raw GROUP BY ts_ms ORDER BY ts_ms DESC LIMIT 2) SELECT CASE WHEN COUNT(*) < 2 THEN NULL ELSE MAX(recv_ts_ms) - MIN(recv_ts_ms) END AS kpm_update_interval FROM indications;",
+          "refId": "A",
+          "timeColumns": [
+            "time",
+            "ts"
+          ]
+        }
+      ],
+      "title": "KPM Update Interval",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "frser-sqlite-datasource",
+        "uid": "llmhric_sqlite"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 0
+      },
+      "id": 12,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "queryText": "WITH latest AS (SELECT MIN(recv_ts_ms) AS recv_ts_ms FROM kpm_measurements_raw WHERE ts_ms = (SELECT MAX(ts_ms) FROM kpm_measurements_raw)), age AS (SELECT CASE WHEN recv_ts_ms IS NULL THEN NULL ELSE CAST(((julianday('now') - 2440587.5) * 86400000 - recv_ts_ms) AS INTEGER) END AS value FROM latest) SELECT CASE WHEN value IS NULL THEN NULL WHEN value < 0 THEN 0 ELSE value END AS kpm_last_seen_age FROM age;",
+          "queryType": "table",
+          "rawQueryText": "WITH latest AS (SELECT MIN(recv_ts_ms) AS recv_ts_ms FROM kpm_measurements_raw WHERE ts_ms = (SELECT MAX(ts_ms) FROM kpm_measurements_raw)), age AS (SELECT CASE WHEN recv_ts_ms IS NULL THEN NULL ELSE CAST(((julianday('now') - 2440587.5) * 86400000 - recv_ts_ms) AS INTEGER) END AS value FROM latest) SELECT CASE WHEN value IS NULL THEN NULL WHEN value < 0 THEN 0 ELSE value END AS kpm_last_seen_age FROM age;",
+          "refId": "A",
+          "timeColumns": [
+            "time",
+            "ts"
+          ]
+        }
+      ],
+      "title": "KPM Last Seen Age",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "frser-sqlite-datasource",
+        "uid": "llmhric_sqlite"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 8,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "Mbits"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "queryText": "SELECT strftime('%Y-%m-%dT%H:%M:%fZ',bucket_ms/1000.0,'unixepoch') AS time,printf('%s | %d:%s',ue_id,sst,replace(sd,'0x','')) AS metric,AVG(dl_th_mbps) AS value FROM (SELECT CAST(ts_ms/100 AS INTEGER)*100 AS bucket_ms,ue_id,sst,sd,COALESCE(dl_th_mbps,0) AS dl_th_mbps FROM ue_slice_throughput WHERE ue_id!='slice-total' AND ts_ms>((julianday('now')-2440587.5)*86400000-120000)) GROUP BY bucket_ms,ue_id,sst,sd ORDER BY bucket_ms ASC;",
+          "queryType": "table",
+          "rawQueryText": "SELECT strftime('%Y-%m-%dT%H:%M:%fZ',bucket_ms/1000.0,'unixepoch') AS time,printf('%s | %d:%s',ue_id,sst,replace(sd,'0x','')) AS metric,AVG(dl_th_mbps) AS value FROM (SELECT CAST(ts_ms/100 AS INTEGER)*100 AS bucket_ms,ue_id,sst,sd,COALESCE(dl_th_mbps,0) AS dl_th_mbps FROM ue_slice_throughput WHERE ue_id!='slice-total' AND ts_ms>((julianday('now')-2440587.5)*86400000-120000)) GROUP BY bucket_ms,ue_id,sst,sd ORDER BY bucket_ms ASC;",
+          "refId": "A",
+          "timeColumns": [
+            "time",
+            "ts"
+          ]
+        }
+      ],
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "metric"
+            ]
+          }
+        }
+      ],
+      "title": "DL TH by UE and Slice",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "frser-sqlite-datasource",
+        "uid": "llmhric_sqlite"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 8,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "Mbits"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "queryText": "SELECT strftime('%Y-%m-%dT%H:%M:%fZ',bucket_ms/1000.0,'unixepoch') AS time,metric,AVG(dl_th_mbps) AS value FROM (SELECT CAST(ts_ms/100 AS INTEGER)*100 AS bucket_ms,printf('%d:%s',sst,replace(sd,'0x','')) AS metric,COALESCE(dl_th_mbps,0) AS dl_th_mbps FROM network_state WHERE ts_ms>((julianday('now')-2440587.5)*86400000-120000)) GROUP BY bucket_ms,metric ORDER BY bucket_ms ASC;",
+          "queryType": "table",
+          "rawQueryText": "SELECT strftime('%Y-%m-%dT%H:%M:%fZ',bucket_ms/1000.0,'unixepoch') AS time,metric,AVG(dl_th_mbps) AS value FROM (SELECT CAST(ts_ms/100 AS INTEGER)*100 AS bucket_ms,printf('%d:%s',sst,replace(sd,'0x','')) AS metric,COALESCE(dl_th_mbps,0) AS dl_th_mbps FROM network_state WHERE ts_ms>((julianday('now')-2440587.5)*86400000-120000)) GROUP BY bucket_ms,metric ORDER BY bucket_ms ASC;",
+          "refId": "A",
+          "timeColumns": [
+            "time",
+            "ts"
+          ]
+        }
+      ],
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "metric"
+            ]
+          }
+        }
+      ],
+      "title": "Slice Aggregate DL TH",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "frser-sqlite-datasource",
+        "uid": "llmhric_sqlite"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 13
+      },
+      "id": 7,
+      "options": {
+        "displayMode": "gradient",
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "queryText": "SELECT printf('%d:%s', p.sst, replace(p.sd, '0x', '')) AS slice, p.dedicated_prb FROM applied_prb_policy p JOIN (SELECT plmn, sst, sd, MAX(ts_ms) AS ts_ms FROM applied_prb_policy GROUP BY plmn, sst, sd) latest ON p.plmn = latest.plmn AND p.sst = latest.sst AND p.sd = latest.sd AND p.ts_ms = latest.ts_ms ORDER BY p.sst, p.sd;",
+          "queryType": "table",
+          "rawQueryText": "SELECT printf('%d:%s', p.sst, replace(p.sd, '0x', '')) AS slice, p.dedicated_prb FROM applied_prb_policy p JOIN (SELECT plmn, sst, sd, MAX(ts_ms) AS ts_ms FROM applied_prb_policy GROUP BY plmn, sst, sd) latest ON p.plmn = latest.plmn AND p.sst = latest.sst AND p.sd = latest.sd AND p.ts_ms = latest.ts_ms ORDER BY p.sst, p.sd;",
+          "refId": "A",
+          "timeColumns": [
+            "time",
+            "ts"
+          ]
+        }
+      ],
+      "title": "Applied Dedicated PRB Ratio",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "frser-sqlite-datasource",
+        "uid": "llmhric_sqlite"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 8,
+        "y": 13
+      },
+      "id": 8,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "queryText": "SELECT policy_id, version, ts_ms, intent, control_type, objective, preferred_ratio_json, llm_action_json FROM a1_policy_summary WHERE active = 1 ORDER BY version DESC LIMIT 8;",
+          "queryType": "table",
+          "rawQueryText": "SELECT policy_id, version, ts_ms, intent, control_type, objective, preferred_ratio_json, llm_action_json FROM a1_policy_summary WHERE active = 1 ORDER BY version DESC LIMIT 8;",
+          "refId": "A",
+          "timeColumns": [
+            "time",
+            "ts"
+          ]
+        }
+      ],
+      "title": "Active A1 Policy",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "frser-sqlite-datasource",
+        "uid": "llmhric_sqlite"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 21
+      },
+      "id": 9,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "queryText": "SELECT ts_ms, policy_id, intent, model, prompt_hash FROM llm_guidance ORDER BY ts_ms DESC LIMIT 10;",
+          "queryType": "table",
+          "rawQueryText": "SELECT ts_ms, policy_id, intent, model, prompt_hash FROM llm_guidance ORDER BY ts_ms DESC LIMIT 10;",
+          "refId": "A",
+          "timeColumns": [
+            "time",
+            "ts"
+          ]
+        }
+      ],
+      "title": "Recent LLM Guidance",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "frser-sqlite-datasource",
+        "uid": "llmhric_sqlite"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 21
+      },
+      "id": 10,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "queryText": "SELECT phase,scheduled_ts_ms,wake_ts_ms,ROUND(jitter_ms,3) AS jitter_ms,state_fresh,COALESCE(skip_reason,'') AS skip_reason,action_issued,action_ts_ms,policy_version FROM controller_ticks ORDER BY tick_id DESC LIMIT 20;",
+          "queryType": "table",
+          "rawQueryText": "SELECT phase,scheduled_ts_ms,wake_ts_ms,ROUND(jitter_ms,3) AS jitter_ms,state_fresh,COALESCE(skip_reason,'') AS skip_reason,action_issued,action_ts_ms,policy_version FROM controller_ticks ORDER BY tick_id DESC LIMIT 20;",
+          "refId": "A",
+          "timeColumns": [
+            "time",
+            "ts"
+          ]
+        }
+      ],
+      "title": "Recent Controller Ticks",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "frser-sqlite-datasource",
+        "uid": "llmhric_sqlite"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 8,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 29
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "queryText": "SELECT strftime('%Y-%m-%dT%H:%M:%fZ', ts_ms / 1000.0, 'unixepoch') AS time,\n       'gemma 1:ffffff' AS metric,\n       COALESCE(json_extract(action_json, '$.llm_action.prb_ratio.\"1:ffffff\"'), 0) AS value\nFROM ddpg_actions WHERE ts_ms > ((julianday('now') - 2440587.5) * 86400000 - 300000)\nUNION ALL\nSELECT strftime('%Y-%m-%dT%H:%M:%fZ', ts_ms / 1000.0, 'unixepoch'), 'gemma 1:123456', COALESCE(json_extract(action_json, '$.llm_action.prb_ratio.\"1:123456\"'), 0)\nFROM ddpg_actions WHERE ts_ms > ((julianday('now') - 2440587.5) * 86400000 - 300000)\nUNION ALL\nSELECT strftime('%Y-%m-%dT%H:%M:%fZ', ts_ms / 1000.0, 'unixepoch'), 'ddpg 1:ffffff', COALESCE(json_extract(action_json, '$.ddpg_action.prb_ratio.\"1:ffffff\"'), 0)\nFROM ddpg_actions WHERE ts_ms > ((julianday('now') - 2440587.5) * 86400000 - 300000)\nUNION ALL\nSELECT strftime('%Y-%m-%dT%H:%M:%fZ', ts_ms / 1000.0, 'unixepoch'), 'ddpg 1:123456', COALESCE(json_extract(action_json, '$.ddpg_action.prb_ratio.\"1:123456\"'), 0)\nFROM ddpg_actions WHERE ts_ms > ((julianday('now') - 2440587.5) * 86400000 - 300000)\nUNION ALL\nSELECT strftime('%Y-%m-%dT%H:%M:%fZ', ts_ms / 1000.0, 'unixepoch'), 'fused 1:ffffff', COALESCE(json_extract(action_json, '$.fused_action.prb_ratio.\"1:ffffff\"'), 0)\nFROM ddpg_actions WHERE ts_ms > ((julianday('now') - 2440587.5) * 86400000 - 300000)\nUNION ALL\nSELECT strftime('%Y-%m-%dT%H:%M:%fZ', ts_ms / 1000.0, 'unixepoch'), 'fused 1:123456', COALESCE(json_extract(action_json, '$.fused_action.prb_ratio.\"1:123456\"'), 0)\nFROM ddpg_actions WHERE ts_ms > ((julianday('now') - 2440587.5) * 86400000 - 300000)\nORDER BY time ASC;",
+          "queryType": "table",
+          "rawQueryText": "SELECT strftime('%Y-%m-%dT%H:%M:%fZ', ts_ms / 1000.0, 'unixepoch') AS time,\n       'gemma 1:ffffff' AS metric,\n       COALESCE(json_extract(action_json, '$.llm_action.prb_ratio.\"1:ffffff\"'), 0) AS value\nFROM ddpg_actions WHERE ts_ms > ((julianday('now') - 2440587.5) * 86400000 - 300000)\nUNION ALL\nSELECT strftime('%Y-%m-%dT%H:%M:%fZ', ts_ms / 1000.0, 'unixepoch'), 'gemma 1:123456', COALESCE(json_extract(action_json, '$.llm_action.prb_ratio.\"1:123456\"'), 0)\nFROM ddpg_actions WHERE ts_ms > ((julianday('now') - 2440587.5) * 86400000 - 300000)\nUNION ALL\nSELECT strftime('%Y-%m-%dT%H:%M:%fZ', ts_ms / 1000.0, 'unixepoch'), 'ddpg 1:ffffff', COALESCE(json_extract(action_json, '$.ddpg_action.prb_ratio.\"1:ffffff\"'), 0)\nFROM ddpg_actions WHERE ts_ms > ((julianday('now') - 2440587.5) * 86400000 - 300000)\nUNION ALL\nSELECT strftime('%Y-%m-%dT%H:%M:%fZ', ts_ms / 1000.0, 'unixepoch'), 'ddpg 1:123456', COALESCE(json_extract(action_json, '$.ddpg_action.prb_ratio.\"1:123456\"'), 0)\nFROM ddpg_actions WHERE ts_ms > ((julianday('now') - 2440587.5) * 86400000 - 300000)\nUNION ALL\nSELECT strftime('%Y-%m-%dT%H:%M:%fZ', ts_ms / 1000.0, 'unixepoch'), 'fused 1:ffffff', COALESCE(json_extract(action_json, '$.fused_action.prb_ratio.\"1:ffffff\"'), 0)\nFROM ddpg_actions WHERE ts_ms > ((julianday('now') - 2440587.5) * 86400000 - 300000)\nUNION ALL\nSELECT strftime('%Y-%m-%dT%H:%M:%fZ', ts_ms / 1000.0, 'unixepoch'), 'fused 1:123456', COALESCE(json_extract(action_json, '$.fused_action.prb_ratio.\"1:123456\"'), 0)\nFROM ddpg_actions WHERE ts_ms > ((julianday('now') - 2440587.5) * 86400000 - 300000)\nORDER BY time ASC;",
+          "refId": "A",
+          "timeColumns": [
+            "time",
+            "ts"
+          ]
+        }
+      ],
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "metric"
+            ]
+          }
+        }
+      ],
+      "title": "Gemma / DDPG / Fused PRB Ratio",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "frser-sqlite-datasource",
+        "uid": "llmhric_sqlite"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 37
+      },
+      "id": 13,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "queryText": "WITH ranked AS (SELECT ue_id,rnti,plmn,sst,sd,ts_ms,ROW_NUMBER() OVER (PARTITION BY ue_id ORDER BY ts_ms DESC,rowid DESC) AS rn FROM ue_slice_throughput WHERE ue_id!='slice-total') SELECT ue_id,rnti,plmn,sst,sd,printf('%d:%s',sst,replace(sd,'0x','')) AS s_nssai,ts_ms AS last_seen_ts_ms FROM ranked WHERE rn=1 ORDER BY ue_id;",
+          "queryType": "table",
+          "rawQueryText": "WITH ranked AS (SELECT ue_id,rnti,plmn,sst,sd,ts_ms,ROW_NUMBER() OVER (PARTITION BY ue_id ORDER BY ts_ms DESC,rowid DESC) AS rn FROM ue_slice_throughput WHERE ue_id!='slice-total') SELECT ue_id,rnti,plmn,sst,sd,printf('%d:%s',sst,replace(sd,'0x','')) AS s_nssai,ts_ms AS last_seen_ts_ms FROM ranked WHERE rn=1 ORDER BY ue_id;",
+          "refId": "A",
+          "timeColumns": [
+            "time",
+            "ts"
+          ]
+        }
+      ],
+      "title": "Current UE / Slice Mapping",
+      "type": "table"
+    }
+  ],
+  "refresh": "500ms",
+  "schemaVersion": 41,
+  "tags": [
+    "llm-hric",
+    "o-ran",
+    "slice"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-2m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "LLM-hRIC Runtime Monitor",
+  "uid": "llm-hric-runtime",
+  "version": 2,
+  "weekStart": ""
+}
