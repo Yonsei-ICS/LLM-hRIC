@@ -34,3 +34,4 @@ nfapi_nr_interface_scf
 *.log
 *.out
 CMakeUserPresets.json
+openair2/E2AP/flexric/log.txt

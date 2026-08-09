@@ -1,114 +1,357 @@
-<!-- SPDX-License-Identifier: CC-BY-4.0 -->
+# LLM-hRIC Prototype
 
-<h1 align="center">
-    <a href="https://openairinterface.org/"><img src="https://openairinterface.org/wp-content/uploads/2015/06/cropped-oai_final_logo.png" alt="OAI" width="550"></a>
-</h1>
+This repository provides a prototype implementation of **LLM-hRIC**, an LLM-empowered hierarchical RAN intelligent control framework for O-RAN.
 
-<p align="center">
-    <a href="https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-CSSL--v1.0-blue" alt="License"></a>
-    <a href="https://releases.ubuntu.com/22.04/"><img src="https://img.shields.io/badge/OS-Ubuntu22-Green" alt="Supported OS Ubuntu 22"></a>
-    <a href="https://releases.ubuntu.com/24.04/"><img src="https://img.shields.io/badge/OS-Ubuntu24-Green" alt="Supported OS Ubuntu 24"></a>
-    <a href="https://releases.ubuntu.com/26.04/"><img src="https://img.shields.io/badge/OS-Ubuntu26-Green" alt="Supported OS Ubuntu 26"></a>
-    <a href="https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux"><img src="https://img.shields.io/badge/OS-RHEL9-Green" alt="Supported OS RHEL9"></a>
-    <a href="https://getfedora.org/en/workstation/"><img src="https://img.shields.io/badge/OS-Fedore44-Green" alt="Supported OS Fedora 44"></a>
-</p>
+The prototype is built on **OpenAirInterface (OAI)** and **FlexRIC** and demonstrates a closed-loop RAN control workflow in which:
 
-<p align="center">
-    <a href="https://gitlab.eurecom.fr/oai/openairinterface5g/-/releases"><img alt="GitLab Release (custom instance)" src="https://img.shields.io/gitlab/v/release/oai/openairinterface5g?gitlab_url=https%3A%2F%2Fgitlab.eurecom.fr&include_prereleases&sort=semver"></a>
-</p>
+- a large language model (LLM) interprets high-level network intents and generates control guidance;
+- an A1-like interface transfers the guidance from the non-RT control layer to the near-RT control layer;
+- a DDPG-based controller combines the LLM guidance with real-time RAN measurements;
+- a FlexRIC RC xApp applies PRB allocation policies to the OAI gNB;
+- Grafana visualizes network states, intents, policies, and control actions.
 
-<p align="center">
-    <a href="https://jenkins-oai.eurecom.fr/job/RAN-Ubuntu18-Image-Builder/"><img src="https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fjenkins-oai.eurecom.fr%2Fjob%2FRAN-Ubuntu18-Image-Builder%2F&label=build-Ubuntu-x86%20Images"></a>
-    <a href="https://jenkins-oai.eurecom.fr/job/RAN-RHEL8-Cluster-Image-Builder/"><img src="https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fjenkins-oai.eurecom.fr%2Fjob%2FRAN-RHEL8-Cluster-Image-Builder%2F&label=build-UBI-x86%20Images"></a>
-    <a href="https://jenkins-oai.eurecom.fr/job/RAN-Ubuntu-ARM-Image-Builder/"><img src="https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fjenkins-oai.eurecom.fr%2Fjob%2FRAN-Ubuntu-ARM-Image-Builder%2F&label=build-Ubuntu-ARM%20Images"></a>
-</p>
+The current prototype focuses on **PRB allocation between network slices**.
 
-<p align="center">
-  <a href="https://hub.docker.com/r/oaisoftwarealliance/oai-gnb"><img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/oaisoftwarealliance/oai-gnb?label=gNB%20docker%20pulls"></a>
-  <a href="https://hub.docker.com/r/oaisoftwarealliance/oai-nr-ue"><img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/oaisoftwarealliance/oai-nr-ue?label=NR-UE%20docker%20pulls"></a>
-  <a href="https://hub.docker.com/r/oaisoftwarealliance/oai-enb"><img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/oaisoftwarealliance/oai-enb?label=eNB%20docker%20pulls"></a>
-  <a href="https://hub.docker.com/r/oaisoftwarealliance/oai-lte-ue"><img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/oaisoftwarealliance/oai-lte-ue?label=LTE-UE%20docker%20pulls"></a>
-  <a href="https://hub.docker.com/r/oaisoftwarealliance/oai-nr-cuup"><img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/oaisoftwarealliance/oai-nr-cuup?label=NR-CUUP%20docker%20pulls"></a>
-</p>
+Power, MCS, and handover are reserved in the schema for later controllers.
 
-# OpenAirInterface License #
+### Result showing
+<video width="640" height="360" controls>
+  <source src="/home/ics1/openairinterface5g/Recording 2026-07-24 170949.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
 
- *  [OAI License Model](http://www.openairinterface.org/?page_id=101)
- *  [CSSL v1.0](http://www.openairinterface.org/?page_id=698)
+Project path:
 
-The source code is distributed under [**CSSL v1.0**](LICENSE).
-Some files, such as for orchestration, are distributed under
-[MIT license](preferred)(MIT.txt). Documentation is distributed under
-[Creative Commons Attribution 4.0 International license](LICENSES/preferred/CC-BY-4.0.txt).
-
-All the files without an explicit copyright header have an implicit "Copyright
-of OpenAirInterface Authors".
-
-Please see [NOTICE](NOTICE) for other licenses which are used in the software.
-
-In the past OAI source code has been re-licensed sometimes, here is the
-history:
-
-1. CSSL v1.0 starting tag 2026.w14
-2. OAI Public License v1.1 starting tag v1.0 till af4b0d53
-3. OAI Public License v1.0: starting tag v.04 till v1.0
-4. GPL 3: starting tag v.0 till v.04 (only initial implementation of 4G)
-
-# Where to Start #
-
- *  [General overview of documentation](./doc/README.md)
- *  [The implemented features](./doc/FEATURE_SET.md)
- *  [System Requirements for Using OAI Stack](./doc/system_requirements.md)
- *  [How to build](./doc/BUILD.md)
- *  [How to run the modems](./doc/RUNMODEM.md)
-
-Not all information is available in a central place, and information for
-specific sub-systems might be available in the corresponding sub-directories.
-To find all READMEs, this command might be handy:
-
-```
-find . -iname "readme*"
+```text
+/openair2/E2AP/flexric/examples/xApp/python3/llm_hric
 ```
 
-# RAN repository structure #
+---
 
-The OpenAirInterface (OAI) software is composed of the following parts: 
+## Architecture and Workflow
 
+The closed-loop control workflow is:
+
+```text
+                    High-Level Network Intent
+                              │
+                              ▼
+                    ┌───────────────────┐
+                    │   LLM-based rAPP  │
+                    │      (Gemma)      │
+                    └─────────┬─────────┘
+                              │
+                         A1 Guidance
+                              │
+                              ▼
+                    ┌───────────────────┐
+                    │  A1-like Policy   │
+                    │      Server       │
+                    └─────────┬─────────┘
+                              │
+                              ▼
+RAN Measurements ──► ┌───────────────────┐
+                     │   DDPG Controller │
+                     │   near-RT Logic   │
+                     └─────────┬─────────┘
+                               │
+                          PRB Policy
+                               │
+                               ▼
+                     ┌───────────────────┐
+                     │ FlexRIC RC xApp   │
+                     └─────────┬─────────┘
+                               │ E2
+                               ▼
+                     ┌───────────────────┐
+                     │      OAI gNB      │
+                     └─────────┬─────────┘
+                               │
+                         RAN Execution
+                               │
+                               └──────────► New Measurements
 ```
-openairinterface5g
-├── charts
-├── ci-scripts        : Meta-scripts used by the OSA CI process. Contains also configuration files used day-to-day by CI.
-├── CMakeLists.txt    : Top-level CMakeLists.txt for building
-├── cmake_targets     : Build utilities to compile (simulation, emulation and real-time platforms), and generated build files.
-├── common            : Some common OAI utilities, some other tools can be found at openair2/UTILS.
-├── doc               : Documentation
-├── docker            : Dockerfiles to build for Ubuntu and RHEL
-├── executables       : Top-level executable source files (gNB, eNB, ...)
-├── maketags          : Script to generate emacs tags.
-├── nfapi             : (n)FAPI code for MAC-PHY interface
-├── openair1          : Layer 1 (3GPP LTE Rel-10/12 PHY, NR Rel-15 PHY)
-├── openair2          : Layer 2 (3GPP LTE Rel-10 MAC/RLC/PDCP/RRC/X2AP, LTE Rel-14 M2AP, NR Rel-15+ MAC/RLC/PDCP/SDAP/RRC/X2AP/F1AP/E1AP), E2AP
-├── openair3          : Layer 3 (3GPP LTE Rel-10 S1AP/GTP, NR Rel-15 NGAP/GTP)
-├── openshift         : OpenShift helm charts for some deployment options of OAI
-├── radio             : Drivers for various radios such as USRP, AW2S, RFsim, 7.2 FHI, ...
-├── targets           : Some configuration files; only historical relevance, and might be deleted in the future
-└── tools             : Tools for use by the developers/ci machines: code analysis and formatting
+
+The main components are:
+
+- `xapp_mac_rlc_pdcp_gtp_moni.py`  
+  Collects MAC/RLC/PDCP/GTP measurements from FlexRIC and stores the network state in SQLite.
+
+- `xapp_kpm_moni`  
+  Collects standard E2SM-KPM measurements.
+
+- `llm_guidance_service.py`  
+  Reads recent RAN states and network intents and generates LLM-based control guidance.
+
+- `a1_policy_server.py`  
+  Provides an A1-like interface for publishing and retrieving policies.
+
+- `ddpg_rc_agent.py`  
+  Uses RAN state and high-level guidance to determine PRB allocation.
+
+- `xapp_rc_slice_ctrl`  
+  Applies PRB policies to the OAI gNB through FlexRIC E2SM-RC control.
+
+- `grafana/`  
+  Visualizes network measurements, active intents, A1 policies, and PRB control actions.
+
+The control loop operates across two time scales:
+
+```text
+LLM/rAPP        : long-term intent interpretation and guidance
+DDPG/near-RT   : fast RAN state-based control
 ```
 
-# How to get support from the OAI Community # 
+This allows the LLM to provide high-level semantic guidance while the near-RT controller reacts to rapidly changing network conditions.
 
-You can ask your question on the [mailing lists](https://gitlab.eurecom.fr/oai/openairinterface5g/-/wikis/MailingList).
+---
 
-Your email should contain below information:
+## First-time build
 
-- A clear subject in your email.
-- For all the queries there should be [Query\] in the subject of the email and for problems there should be [Problem\].
-- In case of a problem, add a small description.
-- Do not share any photos unless you want to share a diagram.
-- OAI gNB/DU/CU/CU-CP/CU-UP configuration file in `.conf` format only.
-- Logs of OAI gNB/DU/CU/CU-CP/CU-UP in `.log` or `.txt` format only.
-- In case your question is related to performance, include a small description of the machine (Operating System, Kernel version, CPU, RAM and networking card) and diagram of your testing environment.
-- Known/open issues are present on [GitLab](https://gitlab.eurecom.fr/oai/openairinterface5g/-/issues), so keep checking.
+Please follow OAI turitor to build your RAN environemtn
 
-Always remember a structured email will help us understand your issues quickly.
-# LLM-hRIC
+## Running the Prototype
+
+
+
+### 1. Start the OAI/FlexRIC testbed
+
+The provided launcher starts the OAI 5G Core, nearRT-RIC, gNB, five UEs, LLM-hRIC services, and Grafana.
+
+```bash
+cd /home/ics1/openairinterface5g/openair2/E2AP/flexric/examples/xApp/python3/llm_hric
+
+sudo -v
+
+UE_MODE=multi \
+UE_COUNT=5 \
+START_LLM_HRIC=1 \
+START_GRAFANA=1 \
+DDPG_APPLY=1 \
+./run_e2e_rfsim.sh start
+```
+
+Check the system status:
+
+```bash
+./run_e2e_rfsim.sh status
+```
+
+The five-UE setup contains two network slices:
+
+```text
+Slice A: S-NSSAI 1:ffffff
+  UE1
+  UE2
+  UE3
+
+Slice B: S-NSSAI 1:123456
+  UE4
+  UE5
+```
+
+---
+
+### 2. Submit a network intent
+
+For example, prioritize Slice A while protecting the throughput of Slice B:
+
+```bash
+curl -X POST http://127.0.0.1:8088/a1-p/intents/slice-prb-intent \
+  -H 'Content-Type: application/json' \
+  -d '{
+        "intent":
+        "prioritize slice 0xffffff while keeping slice 0x123456 above 30 Mbps",
+        "valid_for_ms":1000
+      }'
+```
+
+The LLM-based rAPP converts the natural-language intent and recent RAN measurements into structured guidance.
+
+The near-RT DDPG controller then determines the executable PRB allocation and applies it through the FlexRIC RC xApp.
+
+A new intent can be submitted without restarting the RAN.
+
+---
+
+### 3. Monitor the closed loop
+
+Grafana provides real-time visualization of the LLM-hRIC control process.
+
+Start Grafana with:
+
+```bash
+cd /home/ics1/openairinterface5g/openair2/E2AP/flexric/examples/xApp/python3/llm_hric/grafana
+
+docker compose up -d
+```
+
+Open:
+
+```text
+http://127.0.0.1:3000
+```
+
+and select:
+
+```text
+LLM-hRIC Runtime Monitor
+```
+
+The dashboard displays:
+
+- active network intent;
+- LLM-generated A1 policy;
+- UE and slice throughput;
+- RAN KPI measurements;
+- DDPG decisions;
+- applied PRB allocation;
+- controller and measurement timing.
+
+The complete runtime path can therefore be observed as:
+
+```text
+Intent
+  ↓
+LLM Guidance
+  ↓
+A1 Policy
+  ↓
+DDPG Decision
+  ↓
+RC PRB Action
+  ↓
+RAN KPI Change
+```
+
+---
+
+## Experiment
+
+The prototype includes a five-UE network slicing experiment for evaluating hierarchical LLM/RL control.
+
+Four control schemes can be compared:
+
+| Method | Description |
+|---|---|
+| `static_equal` | Fixed equal PRB allocation |
+| `llm_only` | PRB allocation directly guided by the LLM |
+| `ddpg_only` | DDPG control without LLM guidance |
+| `llm_guided_ddpg` | DDPG control initialized and constrained by LLM guidance |
+
+The main comparison investigates whether high-level LLM guidance can improve the learning and adaptation of the near-RT RL controller while maintaining network performance and SLA requirements.
+
+### Traffic scenarios
+
+The prototype also supports multiple traffic conditions:
+
+| Scenario | Description |
+|---|---|
+| `balanced` | Similar traffic demand across the two slices |
+| `slice_a_heavy` | Higher and dynamically changing demand in Slice A |
+| `slice_b_heavy` | Higher and dynamically changing demand in Slice B |
+
+The traffic conditions change independently of the RIC control loop, allowing the controller to be evaluated under varying RAN loads.
+
+---
+
+### Run an experiment
+
+For example, the v5 experiment configuration can be executed with:
+
+```bash
+cd /home/ics1/openairinterface5g/openair2/E2AP/flexric/examples/xApp/python3
+
+export PYTHONPATH="$PWD"
+export RESULTS=/tmp/llm_hric/experiments/five-ue-traffic-v5
+
+mkdir -p "$RESULTS"
+sudo -v
+
+START_GRAFANA=1 \
+/home/ics1/anaconda3/bin/python -u \
+  -m llm_hric.experiments.experiment_runner \
+  --spec llm_hric/experiments/five_ue_traffic_scenarios_v5.json \
+  --results "$RESULTS" \
+  --manage-stack \
+  --seed 1 \
+  --resume \
+  --fail-fast
+```
+
+A specific traffic scenario and controller can also be selected:
+
+```bash
+START_GRAFANA=1 \
+/home/ics1/anaconda3/bin/python -u \
+  -m llm_hric.experiments.experiment_runner \
+  --spec llm_hric/experiments/five_ue_traffic_scenarios_v5.json \
+  --results "$RESULTS" \
+  --manage-stack \
+  --seed 1 \
+  --scenario balanced \
+  --arm llm_guided_ddpg \
+  --fail-fast
+```
+
+After the experiment, generate the results with:
+
+```bash
+/home/ics1/anaconda3/bin/python \
+  -m llm_hric.experiments.analyze_results \
+  --results "$RESULTS" \
+  --output "$RESULTS/analysis"
+```
+
+The analysis includes metrics such as:
+
+- slice and UE throughput;
+- SLA satisfaction;
+- PRB allocation;
+- RL reward;
+- controller timing;
+- RC control latency;
+- policy trajectories;
+- performance under different traffic scenarios.
+
+This experiment demonstrates the complete closed-loop workflow:
+
+```text
+OAI/FlexRIC RAN
+      ↓
+RAN Measurements
+      ↓
+LLM Intent Interpretation
+      ↓
+A1 Guidance
+      ↓
+DDPG near-RT Control
+      ↓
+E2SM-RC PRB Allocation
+      ↓
+RAN Performance
+```
+
+---
+
+## Reference
+
+If you use this prototype, please cite the original LLM-hRIC paper:
+
+> L. Bao, S. Yun, J. Lee, and T. Q. S. Quek,  
+> “LLM-hRIC: LLM-empowered Hierarchical RAN Intelligent Control for O-RAN,”  
+> *IEEE Communications Magazine*, 2026.  
+> DOI: `10.1109/MCOM.001.2500315`  
+> arXiv: `2504.18062`
+
+BibTeX:
+
+```bibtex
+@article{bao2026llmhric,
+  author  = {Lingyan Bao and Sinwoong Yun and Jemin Lee and Tony Q. S. Quek},
+  title   = {{LLM-hRIC}: {LLM}-empowered Hierarchical {RAN} Intelligent Control for {O-RAN}},
+  journal = {IEEE Communications Magazine},
+  year    = {2026},
+  doi     = {10.1109/MCOM.001.2500315}
+}
+```
