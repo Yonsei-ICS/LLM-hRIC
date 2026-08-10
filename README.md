@@ -119,7 +119,7 @@ Please follow OAI turitor to build your RAN environemtn
 The provided launcher starts the OAI 5G Core, nearRT-RIC, gNB, five UEs, LLM-hRIC services, and Grafana.
 
 ```bash
-cd /home/ics1/openairinterface5g/openair2/E2AP/flexric/examples/xApp/python3/llm_hric
+cd ~/openairinterface5g/openair2/E2AP/flexric/examples/xApp/python3/llm_hric
 
 sudo -v
 
@@ -181,7 +181,7 @@ Grafana provides real-time visualization of the LLM-hRIC control process.
 Start Grafana with:
 
 ```bash
-cd /home/ics1/openairinterface5g/openair2/E2AP/flexric/examples/xApp/python3/llm_hric/grafana
+cd ~/openairinterface5g/openair2/E2AP/flexric/examples/xApp/python3/llm_hric/grafana
 
 docker compose up -d
 ```
@@ -224,115 +224,7 @@ RC PRB Action
 RAN KPI Change
 ```
 
----
 
-## Experiment
-
-The prototype includes a five-UE network slicing experiment for evaluating hierarchical LLM/RL control.
-
-Four control schemes can be compared:
-
-| Method | Description |
-|---|---|
-| `static_equal` | Fixed equal PRB allocation |
-| `llm_only` | PRB allocation directly guided by the LLM |
-| `ddpg_only` | DDPG control without LLM guidance |
-| `llm_guided_ddpg` | DDPG control initialized and constrained by LLM guidance |
-
-The main comparison investigates whether high-level LLM guidance can improve the learning and adaptation of the near-RT RL controller while maintaining network performance and SLA requirements.
-
-### Traffic scenarios
-
-The prototype also supports multiple traffic conditions:
-
-| Scenario | Description |
-|---|---|
-| `balanced` | Similar traffic demand across the two slices |
-| `slice_a_heavy` | Higher and dynamically changing demand in Slice A |
-| `slice_b_heavy` | Higher and dynamically changing demand in Slice B |
-
-The traffic conditions change independently of the RIC control loop, allowing the controller to be evaluated under varying RAN loads.
-
----
-
-### Run an experiment
-
-For example, the v5 experiment configuration can be executed with:
-
-```bash
-cd /home/ics1/openairinterface5g/openair2/E2AP/flexric/examples/xApp/python3
-
-export PYTHONPATH="$PWD"
-export RESULTS=/tmp/llm_hric/experiments/five-ue-traffic-v5
-
-mkdir -p "$RESULTS"
-sudo -v
-
-START_GRAFANA=1 \
-/home/ics1/anaconda3/bin/python -u \
-  -m llm_hric.experiments.experiment_runner \
-  --spec llm_hric/experiments/five_ue_traffic_scenarios_v5.json \
-  --results "$RESULTS" \
-  --manage-stack \
-  --seed 1 \
-  --resume \
-  --fail-fast
-```
-
-A specific traffic scenario and controller can also be selected:
-
-```bash
-START_GRAFANA=1 \
-/home/ics1/anaconda3/bin/python -u \
-  -m llm_hric.experiments.experiment_runner \
-  --spec llm_hric/experiments/five_ue_traffic_scenarios_v5.json \
-  --results "$RESULTS" \
-  --manage-stack \
-  --seed 1 \
-  --scenario balanced \
-  --arm llm_guided_ddpg \
-  --fail-fast
-```
-
-After the experiment, generate the results with:
-
-```bash
-/home/ics1/anaconda3/bin/python \
-  -m llm_hric.experiments.analyze_results \
-  --results "$RESULTS" \
-  --output "$RESULTS/analysis"
-```
-
-The analysis includes metrics such as:
-
-- slice and UE throughput;
-- SLA satisfaction;
-- PRB allocation;
-- RL reward;
-- controller timing;
-- RC control latency;
-- policy trajectories;
-- performance under different traffic scenarios.
-
-This experiment demonstrates the complete closed-loop workflow:
-
-```text
-OAI/FlexRIC RAN
-      ↓
-RAN Measurements
-      ↓
-LLM Intent Interpretation
-      ↓
-A1 Guidance
-      ↓
-DDPG near-RT Control
-      ↓
-E2SM-RC PRB Allocation
-      ↓
-RAN Performance
-```
-
----
 
 ## Reference
 
