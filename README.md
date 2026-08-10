@@ -20,7 +20,7 @@ Power, MCS, and handover are reserved in the schema for later controllers.
   Your browser does not support the video tag.
 </video>
 
-Project path:
+LLM-hRIC path:
 
 ```text
 /openair2/E2AP/flexric/examples/xApp/python3/llm_hric
