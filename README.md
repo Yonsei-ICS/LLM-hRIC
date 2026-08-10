@@ -28,50 +28,6 @@ Project path:
 
 ---
 
-## Architecture and Workflow
-
-The closed-loop control workflow is:
-
-```text
-                    High-Level Network Intent
-                              │
-                              ▼
-                    ┌───────────────────┐
-                    │   LLM-based rAPP  │
-                    │      (Gemma)      │
-                    └─────────┬─────────┘
-                              │
-                         A1 Guidance
-                              │
-                              ▼
-                    ┌───────────────────┐
-                    │  A1-like Policy   │
-                    │      Server       │
-                    └─────────┬─────────┘
-                              │
-                              ▼
-RAN Measurements ──► ┌───────────────────┐
-                     │   DDPG Controller │
-                     │   near-RT Logic   │
-                     └─────────┬─────────┘
-                               │
-                          PRB Policy
-                               │
-                               ▼
-                     ┌───────────────────┐
-                     │ FlexRIC RC xApp   │
-                     └─────────┬─────────┘
-                               │ E2
-                               ▼
-                     ┌───────────────────┐
-                     │      OAI gNB      │
-                     └─────────┬─────────┘
-                               │
-                         RAN Execution
-                               │
-                               └──────────► New Measurements
-```
-
 The main components are:
 
 - `xapp_mac_rlc_pdcp_gtp_moni.py`  
@@ -108,7 +64,7 @@ This allows the LLM to provide high-level semantic guidance while the near-RT co
 
 ## First-time build
 
-Please follow OAI turitor to build your RAN environemtn
+Please set up your RAN environment, which include **5G core functions**, **OAI gNB**, **Flexric**, **grafana**, **five nrUEs**
 
 ## Running the Prototype
 
