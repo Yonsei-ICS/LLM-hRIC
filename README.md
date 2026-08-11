@@ -186,14 +186,7 @@ RAN KPI Change
 
 If you use this prototype, please cite the original LLM-hRIC paper:
 
-> L. Bao, S. Yun, J. Lee, and T. Q. S. Quek,  
-> “LLM-hRIC: LLM-empowered Hierarchical RAN Intelligent Control for O-RAN,”  
-> *IEEE Communications Magazine*, 2026.  
-> DOI: `10.1109/MCOM.001.2500315`  
-> arXiv: `2504.18062`
-
 BibTeX:
-
 ```bibtex
 @article{bao2026llmhric,
   author  = {Lingyan Bao and Sinwoong Yun and Jemin Lee and Tony Q. S. Quek},
